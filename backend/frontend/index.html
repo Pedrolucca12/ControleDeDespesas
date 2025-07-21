@@ -1030,44 +1030,85 @@
     let currentUser = null;
     let currentUserPhoto = null;
     let currentUserId = null;
-    let families = [];
     let currentFamily = null;
     let checkExpiryInterval = null;
+
+    // Inicializar dados do localStorage
+    function initLocalStorage() {
+      if (!localStorage.getItem('users')) {
+        localStorage.setItem('users', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('families')) {
+        localStorage.setItem('families', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('expenses')) {
+        localStorage.setItem('expenses', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('importantDates')) {
+        localStorage.setItem('importantDates', JSON.stringify([]));
+      }
+      if (!localStorage.getItem('history')) {
+        localStorage.setItem('history', JSON.stringify([]));
+      }
+    }
 
     // --- Funções para gerenciar contas ---
     async function createUserAccount(username, photoFile) {
       try {
-        const formData = new FormData();
-        formData.append('username', username);
+        // Criar ID único para o usuário
+        const userId = 'user_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        
+        // Converter foto para base64 se existir
+        let photoBase64 = null;
         if (photoFile) {
-          formData.append('photo', photoFile);
+          photoBase64 = await convertFileToBase64(photoFile);
         }
-
-        const response = await fetch('/api/users', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Erro ao criar usuário');
-        }
-
-        const data = await response.json();
-        return data.user;
+        
+        // Criar objeto do usuário
+        const newUser = {
+          _id: userId,
+          username: username,
+          photoPath: photoBase64,
+          families: [],
+          lastLogin: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        };
+        
+        // Salvar no localStorage
+        const users = JSON.parse(localStorage.getItem('users'));
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        // Adicionar ao histórico
+        addHistoryEntry('Conta criada', `Nova conta criada para ${username}`);
+        
+        return newUser;
       } catch (error) {
         console.error('Erro ao criar usuário:', error);
         throw error;
       }
     }
 
+    // Converter arquivo para base64
+    function convertFileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function getUserAccount(username) {
       try {
-        const response = await fetch(`/api/users/${username}`);
-        if (!response.ok) {
+        const users = JSON.parse(localStorage.getItem('users'));
+        const user = users.find(u => u.username === username);
+        
+        if (!user) {
           throw new Error('Usuário não encontrado');
         }
-        return await response.json();
+        
+        return user;
       } catch (error) {
         console.error('Erro ao buscar usuário:', error);
         throw error;
@@ -1115,6 +1156,9 @@
       }
       
       try {
+        // Inicializa localStorage
+        initLocalStorage();
+        
         // Tenta buscar o usuário existente
         const user = await getUserAccount(username);
         currentUser = user.username;
@@ -1122,13 +1166,12 @@
         currentUserPhoto = user.photoPath;
         
         // Atualiza o último login
-        await fetch(`/api/users/${username}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ lastLogin: new Date() })
-        });
+        const users = JSON.parse(localStorage.getItem('users'));
+        const userIndex = users.findIndex(u => u._id === user._id);
+        if (userIndex !== -1) {
+          users[userIndex].lastLogin = new Date().toISOString();
+          localStorage.setItem('users', JSON.stringify(users));
+        }
       } catch (error) {
         // Se o usuário não existe, cria uma nova conta
         try {
@@ -1136,15 +1179,15 @@
           currentUser = newUser.username;
           currentUserId = newUser._id;
           currentUserPhoto = newUser.photoPath;
-          
-          // Adiciona data de criação da conta ao histórico
-          await addHistoryEntry('Conta criada', `Nova conta criada para ${username}`);
         } catch (createError) {
           showNotification('Erro ao criar conta: ' + createError.message, 'danger');
           return;
         }
       }
 
+      // Salva o último usuário logado
+      localStorage.setItem('lastUser', currentUser);
+      
       // Transição de tela
       loginScreen.style.opacity = '0';
       loginScreen.style.transform = 'translateY(-20px)';
@@ -1209,27 +1252,27 @@
       }, 200);
 
       try {
-        const response = await fetch('/api/expenses', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            description: desc,
-            amount: val,
-            type: type,
-            dueDate: due,
-            paymentType: payType,
-            notes: notes,
-            userId: currentUserId,
-            familyId: currentFamily
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro ao adicionar despesa');
-        }
-
+        // Criar nova despesa
+        const expenseId = 'exp_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        const newExpense = {
+          _id: expenseId,
+          description: desc,
+          amount: val,
+          type: type,
+          dueDate: due,
+          paymentType: payType,
+          notes: notes,
+          userId: currentUserId,
+          familyId: currentFamily,
+          responsavel: responsavel,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Salvar no localStorage
+        const expenses = JSON.parse(localStorage.getItem('expenses'));
+        expenses.push(newExpense);
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+        
         // Adiciona ao histórico
         await addHistoryEntry(
           `${type === 'despesa' ? 'Despesa' : 'Receita'} adicionada`, 
@@ -1255,20 +1298,17 @@
     // Carregar despesas para tabela
     async function loadExpenses() {
       try {
-        let url = `/api/expenses/${currentUserId}`;
-        if (currentFamily) {
-          url += `?familyId=${currentFamily}`;
-        }
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error('Erro ao carregar despesas');
-        }
-
-        const expenses = await response.json();
+        const expenses = JSON.parse(localStorage.getItem('expenses'));
+        
+        // Filtrar despesas do usuário atual e família (se existir)
+        const userExpenses = expenses.filter(exp => 
+          exp.userId === currentUserId || 
+          (currentFamily && exp.familyId === currentFamily)
+        );
+        
         expensesTbody.innerHTML = '';
 
-        if (expenses.length === 0) {
+        if (userExpenses.length === 0) {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
@@ -1280,9 +1320,9 @@
         }
 
         // Ordena por data de vencimento
-        expenses.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        userExpenses.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-        expenses.forEach((exp, index) => {
+        userExpenses.forEach((exp, index) => {
           const tr = document.createElement('tr');
           const vencDate = new Date(exp.dueDate);
           const hoje = new Date();
@@ -1340,25 +1380,20 @@
         row.style.opacity = '0';
         
         try {
-          const response = await fetch(`/api/expenses/${id}`, {
-            method: 'DELETE'
-          });
-
-          if (!response.ok) {
-            throw new Error('Erro ao excluir despesa');
-          }
-
-          // Adiciona ao histórico
-          const expense = expensesTbody.querySelector(`[data-id="${id}"]`);
-          const desc = expense.querySelector('td[data-label="Descrição"]').textContent;
-          const valor = expense.querySelector('td[data-label="Valor"]').textContent;
-          const tipo = expense.querySelector('td[data-label="Tipo"]').textContent.toLowerCase();
+          // Remover do localStorage
+          const expenses = JSON.parse(localStorage.getItem('expenses'));
+          const updatedExpenses = expenses.filter(exp => exp._id !== id);
+          localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
           
-          await addHistoryEntry(
-            `${tipo === 'despesa' ? 'Despesa' : 'Receita'} removida`, 
-            `${desc} - ${valor}`,
-            currentFamily ? 'family' : 'user'
-          );
+          // Adiciona ao histórico
+          const expense = expenses.find(exp => exp._id === id);
+          if (expense) {
+            await addHistoryEntry(
+              `${expense.type === 'despesa' ? 'Despesa' : 'Receita'} removida`, 
+              `${expense.description} - R$ ${expense.amount.toFixed(2)}`,
+              expense.familyId ? 'family' : 'user'
+            );
+          }
 
           setTimeout(() => {
             loadExpenses();
@@ -1376,34 +1411,29 @@
       if (!currentUserId) return;
       
       try {
-        let url = `/api/expenses/${currentUserId}`;
-        if (currentFamily) {
-          url += `?familyId=${currentFamily}`;
-        }
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error('Erro ao verificar vencimentos');
-        }
-
-        const expenses = await response.json();
+        const expenses = JSON.parse(localStorage.getItem('expenses'));
+        const userExpenses = expenses.filter(exp => 
+          exp.userId === currentUserId || 
+          (currentFamily && exp.familyId === currentFamily)
+        );
+        
         const hoje = new Date();
         const hojeStr = hoje.toISOString().split('T')[0];
         const amanha = new Date(hoje);
         amanha.setDate(amanha.getDate() + 1);
         const amanhaStr = amanha.toISOString().split('T')[0];
         
-        const vencHoje = expenses.filter(exp => 
+        const vencHoje = userExpenses.filter(exp => 
           exp.type === 'despesa' && 
           new Date(exp.dueDate).toISOString().split('T')[0] === hojeStr
         );
         
-        const vencAmanha = expenses.filter(exp => 
+        const vencAmanha = userExpenses.filter(exp => 
           exp.type === 'despesa' && 
           new Date(exp.dueDate).toISOString().split('T')[0] === amanhaStr
         );
         
-        const vencidas = expenses.filter(exp => 
+        const vencidas = userExpenses.filter(exp => 
           exp.type === 'despesa' && 
           new Date(exp.dueDate) < hoje &&
           new Date(exp.dueDate).toISOString().split('T')[0] !== hojeStr
@@ -1468,22 +1498,38 @@
       if (!currentUserId) return;
 
       try {
-        const response = await fetch(`/api/users/${currentUser}`);
-        if (!response.ok) {
-          throw new Error('Erro ao carregar informações do usuário');
+        const users = JSON.parse(localStorage.getItem('users'));
+        const user = users.find(u => u._id === currentUserId);
+        
+        if (!user) {
+          throw new Error('Usuário não encontrado');
         }
-
-        const user = await response.json();
         
         if (user.families && user.families.length > 0) {
-          // Assumindo que o usuário está em apenas uma família por enquanto
-          currentFamily = user.families[0]._id;
-          familyInfo.textContent = `Você está na família: "${user.families[0].name}" (Código: ${user.families[0].code})`;
-          btnExitFamily.hidden = false;
-          btnCreateFamily.disabled = true;
-          btnJoinFamily.disabled = true;
-          familyNameInput.disabled = true;
-          familyCodeInput.disabled = true;
+          // Buscar informações da família
+          const families = JSON.parse(localStorage.getItem('families'));
+          const family = families.find(f => f._id === user.families[0]);
+          
+          if (family) {
+            currentFamily = family._id;
+            familyInfo.textContent = `Você está na família: "${family.name}" (Código: ${family.code})`;
+            btnExitFamily.hidden = false;
+            btnCreateFamily.disabled = true;
+            btnJoinFamily.disabled = true;
+            familyNameInput.disabled = true;
+            familyCodeInput.disabled = true;
+          } else {
+            // Se a família não for encontrada, limpa a associação
+            user.families = [];
+            localStorage.setItem('users', JSON.stringify(users));
+            currentFamily = null;
+            familyInfo.textContent = 'Você não está em nenhuma família.';
+            btnExitFamily.hidden = true;
+            btnCreateFamily.disabled = false;
+            btnJoinFamily.disabled = false;
+            familyNameInput.disabled = false;
+            familyCodeInput.disabled = false;
+          }
         } else {
           currentFamily = null;
           familyInfo.textContent = 'Você não está em nenhuma família.';
@@ -1496,6 +1542,16 @@
       } catch (error) {
         console.error('Erro ao atualizar UI da família:', error);
       }
+    }
+
+    // Gerar código aleatório para família
+    function generateFamilyCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
     }
 
     btnCreateFamily.addEventListener('click', async () => {
@@ -1512,31 +1568,40 @@
       }, 200);
 
       try {
-        const response = await fetch('/api/families', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: name,
-            userId: currentUserId
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro ao criar família');
+        // Criar nova família
+        const familyId = 'fam_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        const code = generateFamilyCode();
+        
+        const newFamily = {
+          _id: familyId,
+          name: name,
+          code: code,
+          members: [currentUserId],
+          createdAt: new Date().toISOString()
+        };
+        
+        // Salvar família no localStorage
+        const families = JSON.parse(localStorage.getItem('families'));
+        families.push(newFamily);
+        localStorage.setItem('families', JSON.stringify(families));
+        
+        // Adicionar usuário à família
+        const users = JSON.parse(localStorage.getItem('users'));
+        const userIndex = users.findIndex(u => u._id === currentUserId);
+        if (userIndex !== -1) {
+          users[userIndex].families = [familyId];
+          localStorage.setItem('users', JSON.stringify(users));
         }
-
-        const data = await response.json();
-        currentFamily = data.family._id;
+        
+        currentFamily = familyId;
         
         // Adiciona ao histórico
-        await addHistoryEntry('Família criada', `Nome: ${name} (Código: ${data.family.code})`, 'family');
+        await addHistoryEntry('Família criada', `Nome: ${name} (Código: ${code})`, 'family');
         await addHistoryEntry('Entrou na família', `Usuário ${currentUser} entrou na família`, 'family');
 
         updateFamilyUI();
         loadExpenses();
-        showNotification(`Família "${name}" criada! Código: ${data.family.code}`, 'success');
+        showNotification(`Família "${name}" criada! Código: ${code}`, 'success');
         
         familyNameInput.value = '';
         familyCodeInput.value = '';
@@ -1561,30 +1626,39 @@
       }, 200);
 
       try {
-        const response = await fetch('/api/families/join', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            code: code,
-            userId: currentUserId
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro ao entrar na família');
+        // Buscar família pelo código
+        const families = JSON.parse(localStorage.getItem('families'));
+        const family = families.find(f => f.code === code);
+        
+        if (!family) {
+          throw new Error('Família não encontrada com este código');
         }
-
-        const data = await response.json();
-        currentFamily = data.family._id;
+        
+        // Verificar se o usuário já está na família
+        if (family.members.includes(currentUserId)) {
+          throw new Error('Você já está nesta família');
+        }
+        
+        // Adicionar usuário à família
+        family.members.push(currentUserId);
+        localStorage.setItem('families', JSON.stringify(families));
+        
+        // Atualizar informações do usuário
+        const users = JSON.parse(localStorage.getItem('users'));
+        const userIndex = users.findIndex(u => u._id === currentUserId);
+        if (userIndex !== -1) {
+          users[userIndex].families = [family._id];
+          localStorage.setItem('users', JSON.stringify(users));
+        }
+        
+        currentFamily = family._id;
         
         // Adiciona ao histórico
         await addHistoryEntry('Entrou na família', `Usuário ${currentUser} entrou na família`, 'family');
 
         updateFamilyUI();
         loadExpenses();
-        showNotification(`Você entrou na família "${data.family.name}"!`, 'success');
+        showNotification(`Você entrou na família "${family.name}"!`, 'success');
         
         familyNameInput.value = '';
         familyCodeInput.value = '';
@@ -1607,19 +1681,28 @@
         // Adiciona ao histórico antes de sair
         await addHistoryEntry('Saiu da família', `Usuário ${currentUser} saiu da família`, 'family');
 
-        // Remove usuário da família
-        const response = await fetch(`/api/families/${currentFamily}/leave`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            userId: currentUserId
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro ao sair da família');
+        // Remover usuário da família
+        const families = JSON.parse(localStorage.getItem('families'));
+        const familyIndex = families.findIndex(f => f._id === currentFamily);
+        
+        if (familyIndex !== -1) {
+          const family = families[familyIndex];
+          family.members = family.members.filter(memberId => memberId !== currentUserId);
+          
+          // Se a família ficar sem membros, removê-la
+          if (family.members.length === 0) {
+            families.splice(familyIndex, 1);
+          }
+          
+          localStorage.setItem('families', JSON.stringify(families));
+        }
+        
+        // Atualizar informações do usuário
+        const users = JSON.parse(localStorage.getItem('users'));
+        const userIndex = users.findIndex(u => u._id === currentUserId);
+        if (userIndex !== -1) {
+          users[userIndex].families = [];
+          localStorage.setItem('users', JSON.stringify(users));
         }
 
         currentFamily = null;
@@ -1661,23 +1744,23 @@
 
     async function loadImportantDates() {
       try {
-        const response = await fetch(`/api/users/${currentUser}/dates`);
-        if (!response.ok) {
-          throw new Error('Erro ao carregar datas importantes');
-        }
-
-        const dates = await response.json();
+        const dates = JSON.parse(localStorage.getItem('importantDates'));
+        const userDates = dates.filter(date => 
+          date.userId === currentUserId || 
+          (currentFamily && date.familyId === currentFamily)
+        );
+        
         datesContainer.innerHTML = '';
         
-        if (dates.length === 0) {
+        if (userDates.length === 0) {
           datesContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Nenhuma data importante cadastrada ainda.</p>';
           return;
         }
         
         // Ordena por data
-        dates.sort((a, b) => new Date(a.date) - new Date(b.date));
+        userDates.sort((a, b) => new Date(a.date) - new Date(b.date));
         
-        dates.forEach(date => {
+        userDates.forEach(date => {
           const dateCard = document.createElement('div');
           dateCard.className = 'date-card';
           
@@ -1712,22 +1795,22 @@
       }
       
       try {
-        const response = await fetch('/api/dates', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            title,
-            date,
-            notes,
-            userId: currentUserId
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro ao adicionar data importante');
-        }
+        // Criar nova data importante
+        const dateId = 'date_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        const newDate = {
+          _id: dateId,
+          title: title,
+          date: date,
+          notes: notes,
+          userId: currentUserId,
+          familyId: currentFamily,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Salvar no localStorage
+        const dates = JSON.parse(localStorage.getItem('importantDates'));
+        dates.push(newDate);
+        localStorage.setItem('importantDates', JSON.stringify(dates));
 
         // Adiciona ao histórico
         await addHistoryEntry('Data importante adicionada', `${title} - ${new Date(date).toLocaleDateString()}`);
@@ -1750,20 +1833,11 @@
           const title = dateCard.querySelector('h3').textContent;
           const date = dateCard.querySelector('.date').textContent;
           
-          const response = await fetch(`/api/dates/${id}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              userId: currentUserId
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error('Erro ao remover data importante');
-          }
-
+          // Remover do localStorage
+          const dates = JSON.parse(localStorage.getItem('importantDates'));
+          const updatedDates = dates.filter(d => d._id !== id);
+          localStorage.setItem('importantDates', JSON.stringify(updatedDates));
+          
           // Adiciona ao histórico
           await addHistoryEntry('Data importante removida', `${title} - ${date}`);
           
@@ -1805,36 +1879,23 @@
 
     async function loadHistory() {
       try {
-        let userHistory = [];
-        let familyHistory = [];
+        const history = JSON.parse(localStorage.getItem('history'));
+        const userHistory = history.filter(item => 
+          (item.userId === currentUserId && (!item.scope || item.scope === 'user')) || 
+          (currentFamily && item.familyId === currentFamily && item.scope === 'family')
+        );
         
-        // Busca histórico do usuário
-        const userResponse = await fetch(`/api/users/${currentUser}/history`);
-        if (userResponse.ok) {
-          userHistory = await userResponse.json();
-        }
-        
-        // Se estiver em uma família, busca histórico da família
-        if (currentFamily) {
-          const familyResponse = await fetch(`/api/families/${currentFamily}/history`);
-          if (familyResponse.ok) {
-            familyHistory = await familyResponse.json();
-          }
-        }
-        
-        // Combina os históricos
-        const history = [...userHistory, ...familyHistory];
         historyContainer.innerHTML = '';
         
-        if (history.length === 0) {
+        if (userHistory.length === 0) {
           historyContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Nenhum registro no histórico ainda.</p>';
           return;
         }
         
         // Ordena por data (mais recente primeiro)
-        history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        userHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
-        history.forEach(item => {
+        userHistory.forEach(item => {
           const historyItem = document.createElement('div');
           historyItem.className = 'history-item';
           
@@ -1855,23 +1916,22 @@
 
     async function addHistoryEntry(action, details = '', scope = 'user') {
       try {
-        const response = await fetch('/api/history', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action,
-            details,
-            scope,
-            userId: currentUserId,
-            familyId: scope === 'family' ? currentFamily : undefined
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro ao adicionar histórico');
-        }
+        // Criar novo registro de histórico
+        const historyId = 'hist_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        const newHistory = {
+          _id: historyId,
+          action: action,
+          details: details,
+          scope: scope,
+          userId: currentUserId,
+          familyId: scope === 'family' ? currentFamily : undefined,
+          timestamp: new Date().toISOString()
+        };
+        
+        // Salvar no localStorage
+        const history = JSON.parse(localStorage.getItem('history'));
+        history.push(newHistory);
+        localStorage.setItem('history', JSON.stringify(history));
 
         // Atualiza a exibição se a seção estiver visível
         if (historySection.getAttribute('aria-hidden') === 'false') {
@@ -1884,12 +1944,13 @@
 
     // Inicialização
     document.addEventListener('DOMContentLoaded', () => {
-      // Verificar se há usuário logado (simplificado para exemplo)
-      // Na implementação real, você deve verificar o token de autenticação
+      initLocalStorage();
+      
+      // Verificar se há usuário logado
       const lastUser = localStorage.getItem('lastUser');
       if (lastUser) {
         usernameInput.value = lastUser;
-        // Aqui você deve implementar a verificação de autenticação real
+        loginBtn.disabled = false;
       }
     });
   </script>
