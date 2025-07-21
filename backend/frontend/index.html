@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Controle Familiar de Despesas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* Variáveis para tema dark */
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #e0e0e0;
+      --accent: #4cc9f0;
+      --shadow: rgba(0,0,0,0.5);
+      --transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      --font-primary: 'Poppins', sans-serif;
+      --font-secondary: 'Roboto', sans-serif;
+      --border-radius: 12px;
+      --text-muted: #aaa;
+      --warning: #ffc107;
+      --danger: #f72585;
+      --success: #4caf50;
+    }
+
+    /* Reset e estilos base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      margin: 0;
+      padding: 2rem 1rem;
+      font-family: var(--font-primary);
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background-color var(--transition), color var(--transition);
+      line-height: 1.6;
+    }
+
+    /* Container principal */
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .container {
+      width: 100%;
+      background: var(--card);
+      border-radius: var(--border-radius);
+      padding: 2.5rem 3rem;
+      box-shadow: 0 10px 30px var(--shadow);
+      position: relative;
+      animation: fadeInUp 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, var(--accent) 0%, #7209b7 100%);
+      animation: rainbowBorder 8s linear infinite;
+    }
+
+    h1 {
+      font-weight: 700;
+      font-size: 2.5rem;
+      text-align: center;
+      margin: 1.5rem 0 2.5rem;
+      color: var(--accent);
+      letter-spacing: 1px;
+      user-select: none;
+      position: relative;
+      animation: fadeIn 0.8s ease both;
+      font-family: var(--font-secondary);
+    }
+
+    h1::after {
+      content: '';
+      display: block;
+      width: 80px;
+      height: 4px;
+      background: var(--accent);
+      margin: 1rem auto 0;
+      border-radius: 2px;
+      animation: scaleIn 0.8s ease both;
+    }
+
+    h2 {
+      font-weight: 600;
+      font-size: 1.8rem;
+      margin: 1.5rem 0 1rem;
+      color: var(--accent);
+      font-family: var(--font-secondary);
+      position: relative;
+      padding-bottom: 0.5rem;
+    }
+
+    h2::after {
+      content: '';
+      display: block;
+      width: 50px;
+      height: 3px;
+      background: var(--accent);
+      margin-top: 0.5rem;
+      border-radius: 2px;
+    }
+
+    /* Tela login */
+    #login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 1s ease both;
+    }
+
+    #login-screen label {
+      cursor: pointer;
+      text-align: center;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    #login-screen img {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 8px 25px var(--shadow);
+      transition: all 0.4s ease;
+      border: 4px solid var(--accent);
+    }
+
+    #login-screen img:hover {
+      transform: scale(1.05) rotate(5deg);
+      box-shadow: 0 12px 30px var(--shadow);
+    }
+
+    #photo-input {
+      display: none;
+    }
+
+    #username-input {
+      margin-top: 1.5rem;
+      width: 250px;
+      font-size: 1.3rem;
+      font-weight: 500;
+      border: none;
+      border-bottom: 3px solid var(--accent);
+      background: transparent;
+      color: var(--text);
+      text-align: center;
+      padding: 0.5rem 0;
+      transition: all 0.3s ease;
+      font-family: var(--font-secondary);
+    }
+
+    #username-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      transform: scale(1.02);
+    }
+
+    #username-input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.7;
+    }
+
+    #login-btn {
+      margin-top: 2rem;
+      padding: 0.9rem 2.5rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-radius: 50px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(76, 201, 240, 0.3);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      font-family: var(--font-secondary);
+    }
+
+    #login-btn:disabled {
+      background: #555;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none !important;
+    }
+
+    #login-btn:not(:disabled):hover {
+      background: var(--accent);
+      box-shadow: 0 12px 25px rgba(76, 201, 240, 0.4);
+      transform: translateY(-3px);
+    }
+
+    #login-btn:not(:disabled):active {
+      transform: translateY(1px);
+    }
+
+    #login-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.2) 50%, transparent 75%);
+      background-size: 400% 400%;
+      opacity: 0;
+      transition: all 0.6s ease;
+    }
+
+    #login-btn:hover::after {
+      opacity: 1;
+      animation: shine 1.5s ease infinite;
+    }
+
+    /* App principal */
+    #app {
+      display: none;
+      width: 100%;
+      animation: fadeIn 0.8s ease both;
+    }
+
+    /* Formulário de despesas */
+    form {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.2rem 1.8rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--accent);
+      font-family: var(--font-secondary);
+    }
+
+    input, select, textarea {
+      padding: 0.8rem 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 2px solid #444;
+      background: var(--card);
+      color: var(--text);
+      transition: all 0.3s ease;
+      width: 100%;
+      font-family: var(--font-secondary);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2);
+      transform: translateY(-2px);
+    }
+
+    textarea {
+      grid-column: span 2;
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    button[type="submit"] {
+      grid-column: span 2;
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-weight: 600;
+      font-size: 1.2rem;
+      cursor: pointer;
+      border-radius: 50px;
+      padding: 1rem 0;
+      box-shadow: 0 8px 20px rgba(76, 201, 240, 0.3);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      margin-top: 0.5rem;
+      font-family: var(--font-secondary);
+    }
+
+    button[type="submit"]:hover {
+      background: var(--accent);
+      box-shadow: 0 12px 25px rgba(76, 201, 240, 0.4);
+      transform: translateY(-3px);
+    }
+
+    button[type="submit"]:active {
+      transform: translateY(1px);
+    }
+
+    /* Tabela de despesas */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-bottom: 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 10px 25px var(--shadow);
+      animation: fadeInUp 0.7s ease both;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      min-width: 600px;
+    }
+
+    thead {
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+
+    th, td {
+      padding: 1.2rem 1.5rem;
+      text-align: left;
+      border-bottom: 1px solid #444;
+      vertical-align: middle;
+      transition: all 0.3s ease;
+    }
+
+    th {
+      font-family: var(--font-secondary);
+      letter-spacing: 0.5px;
+    }
+
+    tbody tr {
+      transition: all 0.3s ease;
+    }
+
+    tbody tr:hover {
+      background: rgba(76, 201, 240, 0.1);
+      transform: translateX(5px);
+    }
+
+    tbody tr[title] {
+      background: rgba(255, 193, 7, 0.15) !important;
+      position: relative;
+    }
+
+    tbody tr[title]::before {
+      content: '⚠️';
+      position: absolute;
+      left: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .btn-delete {
+      background: #f72585;
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      font-family: var(--font-secondary);
+    }
+
+    .btn-delete:hover {
+      background: #b5179e;
+      transform: scale(1.05);
+    }
+
+    .btn-delete:active {
+      transform: scale(0.95);
+    }
+
+    /* Seção família */
+    .family-container {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 1rem;
+    }
+
+    #family-section {
+      background: var(--card);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: 0 10px 30px var(--shadow);
+      display: none;
+      animation: fadeIn 0.6s ease both;
+      margin-top: 1rem;
+    }
+
+    #family-section[aria-hidden="false"] {
+      display: block;
+    }
+
+    #family-info {
+      margin-bottom: 1.5rem;
+      font-size: 1.1rem;
+      padding: 1rem;
+      background: rgba(76, 201, 240, 0.1);
+      border-radius: var(--border-radius);
+      border-left: 4px solid var(--accent);
+    }
+
+    .family-btns {
+      display: flex;
+      gap: 1.2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .family-btns button {
+      flex: 1;
+      min-width: 150px;
+      padding: 0.8rem;
+      border-radius: var(--border-radius);
+      border: none;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      color: white;
+      background: var(--accent);
+      box-shadow: 0 5px 15px var(--shadow);
+      transition: all 0.3s ease;
+      font-family: var(--font-secondary);
+    }
+
+    .family-btns button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px var(--shadow);
+    }
+
+    .family-btns button:active {
+      transform: translateY(1px);
+    }
+
+    #btn-exit-family {
+      background: #f72585 !important;
+    }
+
+    #btn-exit-family:hover {
+      background: #b5179e !important;
+    }
+
+    #family-name, #family-code {
+      width: 100%;
+      margin-bottom: 1rem;
+      border-radius: var(--border-radius);
+      border: 2px solid #444;
+      padding: 0.8rem 1rem;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      font-family: var(--font-secondary);
+    }
+
+    #family-name:focus, #family-code:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2);
+      transform: translateY(-2px);
+    }
+
+    /* Botão toggle família */
+    #btn-family-toggle {
+      width: 100%;
+      max-width: 900px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--border-radius);
+      color: white;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 5px 15px var(--shadow);
+      transition: all 0.3s ease;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      font-family: var(--font-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    #btn-family-toggle:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px var(--shadow);
+    }
+
+    #btn-family-toggle:active {
+      transform: translateY(1px);
+    }
+
+    /* Notificações */
+    #notification {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--accent);
+      color: white;
+      padding: 1.2rem 2rem;
+      border-radius: var(--border-radius);
+      box-shadow: 0 10px 25px var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      user-select: none;
+      font-weight: 600;
+      max-width: 350px;
+      z-index: 1000;
+      font-family: var(--font-secondary);
+    }
+
+    #notification.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    #notification.warning {
+      background: var(--warning);
+      color: #333;
+    }
+
+    #notification.danger {
+      background: var(--danger);
+    }
+
+    #notification.success {
+      background: var(--success);
+    }
+
+    /* Seção de datas importantes */
+    #important-dates-section {
+      background: var(--card);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: 0 10px 30px var(--shadow);
+      margin-top: 1.5rem;
+      display: none;
+    }
+
+    #important-dates-section[aria-hidden="false"] {
+      display: block;
+    }
+
+    .date-card {
+      background: rgba(76, 201, 240, 0.1);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid var(--accent);
+      transition: all 0.3s ease;
+    }
+
+    .date-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px var(--shadow);
+    }
+
+    .date-card h3 {
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      font-family: var(--font-secondary);
+    }
+
+    .date-card p {
+      margin-bottom: 0.5rem;
+    }
+
+    .date-card .date {
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .date-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    /* Histórico de alterações */
+    #history-section {
+      background: var(--card);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: 0 10px 30px var(--shadow);
+      margin-top: 1.5rem;
+      display: none;
+    }
+
+    #history-section[aria-hidden="false"] {
+      display: block;
+    }
+
+    .history-item {
+      padding: 1rem;
+      border-bottom: 1px solid #444;
+      transition: all 0.3s ease;
+    }
+
+    .history-item:hover {
+      background: rgba(76, 201, 240, 0.1);
+    }
+
+    .history-item .date {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .history-item .action {
+      font-weight: 500;
+      margin: 0.3rem 0;
+    }
+
+    .history-item .details {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Botões de seção */
+    .section-toggle {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--border-radius);
+      color: white;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 5px 15px var(--shadow);
+      transition: all 0.3s ease;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      font-family: var(--font-secondary);
+      margin-top: 1rem;
+    }
+
+    .section-toggle:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px var(--shadow);
+    }
+
+    .section-toggle:active {
+      transform: translateY(1px);
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .container {
+        padding: 2rem 1.5rem;
+        max-width: 100%;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      form {
+        grid-template-columns: 1fr !important;
+      }
+
+      textarea {
+        grid-column: 1 / -1 !important;
+      }
+
+      .table-container {
+        border-radius: 0;
+        box-shadow: none;
+        margin-left: -1.5rem;
+        margin-right: -1.5rem;
+        width: calc(100% + 3rem);
+      }
+
+      table {
+        min-width: 100%;
+      }
+
+      thead tr {
+        display: none;
+      }
+
+      tbody tr {
+        margin-bottom: 1.5rem;
+        border-radius: var(--border-radius);
+        background: var(--card);
+        box-shadow: 0 5px 15px var(--shadow);
+        padding: 1rem;
+        position: relative;
+        display: block;
+      }
+
+      tbody td {
+        padding-left: 50%;
+        position: relative;
+        text-align: right;
+        font-size: 0.95rem;
+        border-bottom: none;
+        padding: 0.8rem 1rem 0.8rem 50%;
+        display: block;
+      }
+
+      tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 1rem;
+        width: 45%;
+        font-weight: 600;
+        text-align: left;
+        color: var(--accent);
+      }
+
+      .btn-delete {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1.1rem;
+      }
+
+      .family-btns button {
+        flex: 100%;
+      }
+
+      #family-section {
+        padding: 1.5rem;
+      }
+
+      .date-form {
+        grid-template-columns: 1fr;
+      }
+
+      #important-dates-section, #history-section {
+        padding: 1.5rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem 1rem;
+      }
+
+      #login-screen img {
+        width: 120px;
+        height: 120px;
+      }
+
+      #username-input {
+        width: 200px;
+        font-size: 1.1rem;
+      }
+
+      #login-btn {
+        padding: 0.8rem 2rem;
+        font-size: 1.1rem;
+      }
+
+      tbody td {
+        padding-left: 40%;
+      }
+
+      tbody td::before {
+        width: 35%;
+      }
+
+      #family-section, #important-dates-section, #history-section {
+        padding: 1rem;
+      }
+    }
+
+    /* Animações */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shine {
+      0% { background-position: -100% -100%; }
+      100% { background-position: 200% 200%; }
+    }
+
+    @keyframes rainbowBorder {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <div class="container" role="main" aria-live="polite">
+      <h1>💰 Controle Familiar de Despesas</h1>
+
+      <!-- Tela login -->
+      <section id="login-screen" aria-label="Tela de login">
+        <label for="photo-input" tabindex="0" aria-describedby="photo-desc">
+          <img src="https://static.vecteezy.com/ti/vetor-gratis/p1/9292244-default-avatar-icon-vector-of-social-media-user-vetor.jpg" alt="Foto do usuário" id="profile-pic" title="Clique para alterar a foto" />
+          <div id="photo-desc" hidden>Selecionar foto do perfil</div>
+        </label>
+        <input type="file" id="photo-input" accept="image/*" aria-label="Selecionar foto do perfil" />
+        <input type="text" id="username-input" placeholder="Digite seu nome" maxlength="20" autocomplete="off" aria-required="true" aria-label="Nome do usuário" />
+        <button id="login-btn" disabled>Entrar</button>
+      </section>
+
+      <!-- App principal -->
+      <section id="app" aria-label="Aplicação controle de despesas" tabindex="0">
+        <form id="expense-form" aria-label="Formulário para adicionar despesa ou receita">
+          <div class="form-group">
+            <label for="desc">Descrição</label>
+            <input type="text" id="desc" name="desc" placeholder="Descrição" required autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="val">Valor (R$)</label>
+            <input type="number" id="val" name="val" step="0.01" min="0" placeholder="Valor" required />
+          </div>
+
+          <div class="form-group">
+            <label for="responsavel">Responsável</label>
+            <input type="text" id="responsavel" name="responsavel" placeholder="Quem está pagando/recebendo" required autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="type">Tipo</label>
+            <select id="type" name="type" required>
+              <option value="despesa">Despesa</option>
+              <option value="receita">Receita</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="due">Vencimento</label>
+            <input type="date" id="due" name="due" required />
+          </div>
+
+          <div class="form-group">
+            <label for="payType">Tipo de Pagamento</label>
+            <select id="payType" name="payType" required>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="cartão">Cartão</option>
+              <option value="boleto">Boleto</option>
+              <option value="transferência">Transferência</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: span 2;">
+            <label for="notes">Observações</label>
+            <textarea id="notes" name="notes" placeholder="Observações adicionais (opcional)" rows="3"></textarea>
+          </div>
+
+          <button type="submit" aria-label="Adicionar despesa ou receita">
+            <span>Adicionar</span>
+          </button>
+        </form>
+
+        <div class="table-container">
+          <table aria-label="Lista de despesas e receitas">
+            <thead>
+              <tr>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Responsável</th>
+                <th>Tipo</th>
+                <th>Vencimento</th>
+                <th>Pagamento</th>
+                <th>Observações</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-tbody" tabindex="0"></tbody>
+          </table>
+        </div>
+        
+        <!-- Seção de Datas Importantes -->
+        <button id="btn-dates-toggle" class="section-toggle" aria-expanded="false" aria-controls="important-dates-section">
+          <span>📅</span>
+          <span>Datas Importantes</span>
+        </button>
+        
+        <section id="important-dates-section" aria-label="Datas importantes" aria-hidden="true" tabindex="0">
+          <h2>Datas Importantes</h2>
+          
+          <div id="dates-container"></div>
+          
+          <h3>Adicionar Nova Data</h3>
+          <form id="date-form" class="date-form">
+            <div class="form-group">
+              <label for="date-title">Título</label>
+              <input type="text" id="date-title" placeholder="Ex: Entrada na casa" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="date-value">Data</label>
+              <input type="date" id="date-value" required>
+            </div>
+            
+            <div class="form-group" style="grid-column: span 2;">
+              <label for="date-notes">Observações</label>
+              <textarea id="date-notes" placeholder="Detalhes adicionais (opcional)"></textarea>
+            </div>
+            
+            <button type="submit" style="grid-column: span 2;">Adicionar Data</button>
+          </form>
+        </section>
+        
+        <!-- Seção de Histórico -->
+        <button id="btn-history-toggle" class="section-toggle" aria-expanded="false" aria-controls="history-section">
+          <span>🕒</span>
+          <span>Histórico de Alterações</span>
+        </button>
+        
+        <section id="history-section" aria-label="Histórico de alterações" aria-hidden="true" tabindex="0">
+          <h2>Histórico de Alterações</h2>
+          <div id="history-container"></div>
+        </section>
+      </section>
+    </div>
+
+    <!-- Seção Família -->
+    <div class="family-container">
+      <button id="btn-family-toggle" aria-expanded="false" aria-controls="family-section">
+        <span>👪</span>
+        <span>Gerenciar Família</span>
+      </button>
+
+      <section id="family-section" aria-label="Gerenciamento de família" aria-hidden="true" tabindex="0">
+        <div id="family-info"></div>
+
+        <div class="family-btns">
+          <button id="btn-create-family" aria-label="Criar família">Criar Família</button>
+          <button id="btn-join-family" aria-label="Entrar em família">Entrar na Família</button>
+          <button id="btn-exit-family" aria-label="Sair da família" hidden>Sair da Família</button>
+        </div>
+
+        <input type="text" id="family-name" placeholder="Nome da família" />
+        <input type="text" id="family-code" placeholder="Código da família (6 caracteres)" maxlength="6" />
+      </section>
+    </div>
+  </div>
+
+  <div id="notification" role="alert" aria-live="assertive"></div>
+
+  <script>
+    // Elementos
+    const loginScreen = document.getElementById('login-screen');
+    const usernameInput = document.getElementById('username-input');
+    const photoInput = document.getElementById('photo-input');
+    const profilePic = document.getElementById('profile-pic');
+    const loginBtn = document.getElementById('login-btn');
+    const app = document.getElementById('app');
+    const expenseForm = document.getElementById('expense-form');
+    const expensesTbody = document.getElementById('expenses-tbody');
+
+    const btnFamilyToggle = document.getElementById('btn-family-toggle');
+    const familySection = document.getElementById('family-section');
+    const familyInfo = document.getElementById('family-info');
+    const btnCreateFamily = document.getElementById('btn-create-family');
+    const btnJoinFamily = document.getElementById('btn-join-family');
+    const btnExitFamily = document.getElementById('btn-exit-family');
+    const familyNameInput = document.getElementById('family-name');
+    const familyCodeInput = document.getElementById('family-code');
+
+    const btnDatesToggle = document.getElementById('btn-dates-toggle');
+    const datesSection = document.getElementById('important-dates-section');
+    const datesContainer = document.getElementById('dates-container');
+    const dateForm = document.getElementById('date-form');
+
+    const btnHistoryToggle = document.getElementById('btn-history-toggle');
+    const historySection = document.getElementById('history-section');
+    const historyContainer = document.getElementById('history-container');
+
+    const notification = document.getElementById('notification');
+
+    // Estado
+    let currentUser = null;
+    let currentUserPhoto = null;
+    let currentUserId = null;
+    let families = [];
+    let currentFamily = null;
+    let checkExpiryInterval = null;
+
+    // --- Funções para gerenciar contas ---
+    async function createUserAccount(username, photoFile) {
+      try {
+        const formData = new FormData();
+        formData.append('username', username);
+        if (photoFile) {
+          formData.append('photo', photoFile);
+        }
+
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Erro ao criar usuário');
+        }
+
+        const data = await response.json();
+        return data.user;
+      } catch (error) {
+        console.error('Erro ao criar usuário:', error);
+        throw error;
+      }
+    }
+
+    async function getUserAccount(username) {
+      try {
+        const response = await fetch(`/api/users/${username}`);
+        if (!response.ok) {
+          throw new Error('Usuário não encontrado');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+        throw error;
+      }
+    }
+
+    // --- Login ---
+    usernameInput.addEventListener('input', () => {
+      const val = usernameInput.value.trim();
+      loginBtn.disabled = val.length < 2;
+    });
+
+    // Foto preview
+    photoInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      if (!file.type.startsWith('image/')) {
+        showNotification('Escolha um arquivo de imagem válido!', 'warning');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        profilePic.src = reader.result;
+        currentUserPhoto = file;
+        
+        profilePic.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          profilePic.style.transform = 'scale(1.05) rotate(5deg)';
+        }, 100);
+        setTimeout(() => {
+          profilePic.style.transform = 'scale(1)';
+        }, 200);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Login
+    loginBtn.addEventListener('click', async () => {
+      const username = usernameInput.value.trim();
+      if (username.length < 2) {
+        showNotification('Digite um nome válido com pelo menos 2 caracteres.', 'warning');
+        return;
+      }
+      
+      try {
+        // Tenta buscar o usuário existente
+        const user = await getUserAccount(username);
+        currentUser = user.username;
+        currentUserId = user._id;
+        currentUserPhoto = user.photoPath;
+        
+        // Atualiza o último login
+        await fetch(`/api/users/${username}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ lastLogin: new Date() })
+        });
+      } catch (error) {
+        // Se o usuário não existe, cria uma nova conta
+        try {
+          const newUser = await createUserAccount(username, currentUserPhoto);
+          currentUser = newUser.username;
+          currentUserId = newUser._id;
+          currentUserPhoto = newUser.photoPath;
+          
+          // Adiciona data de criação da conta ao histórico
+          await addHistoryEntry('Conta criada', `Nova conta criada para ${username}`);
+        } catch (createError) {
+          showNotification('Erro ao criar conta: ' + createError.message, 'danger');
+          return;
+        }
+      }
+
+      // Transição de tela
+      loginScreen.style.opacity = '0';
+      loginScreen.style.transform = 'translateY(-20px)';
+      
+      setTimeout(() => {
+        loginScreen.style.display = 'none';
+        app.style.display = 'block';
+        app.style.opacity = '0';
+        app.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+          app.style.opacity = '1';
+          app.style.transform = 'translateY(0)';
+        }, 50);
+      }, 300);
+
+      loadExpenses();
+      updateFamilyUI();
+      loadImportantDates();
+      loadHistory();
+      
+      // Inicia verificação de vencimentos
+      startExpiryCheck();
+      
+      // Verifica vencimentos imediatamente ao logar
+      checkExpiringExpenses();
+    });
+
+    // --- Notificações ---
+    let notifTimeout;
+    function showNotification(msg, type = '') {
+      clearTimeout(notifTimeout);
+      notification.textContent = msg;
+      notification.className = type ? `show ${type}` : 'show';
+      
+      notifTimeout = setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3500);
+    }
+
+    // --- Gerenciar despesas ---
+    expenseForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const desc = expenseForm.desc.value.trim();
+      const val = parseFloat(expenseForm.val.value);
+      const responsavel = expenseForm.responsavel.value.trim();
+      const type = expenseForm.type.value;
+      const due = expenseForm.due.value;
+      const payType = expenseForm.payType.value;
+      const notes = expenseForm.notes.value.trim();
+
+      if (!desc || isNaN(val) || !responsavel || !due) {
+        showNotification('Preencha os campos obrigatórios!', 'warning');
+        return;
+      }
+
+      // Animação de submit
+      const submitBtn = expenseForm.querySelector('button[type="submit"]');
+      submitBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        submitBtn.style.transform = 'scale(1)';
+      }, 200);
+
+      try {
+        const response = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            description: desc,
+            amount: val,
+            type: type,
+            dueDate: due,
+            paymentType: payType,
+            notes: notes,
+            userId: currentUserId,
+            familyId: currentFamily
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao adicionar despesa');
+        }
+
+        // Adiciona ao histórico
+        await addHistoryEntry(
+          `${type === 'despesa' ? 'Despesa' : 'Receita'} adicionada`, 
+          `${desc} - R$ ${val.toFixed(2)} (${responsavel})`,
+          currentFamily ? 'family' : 'user'
+        );
+
+        // Reset com animação
+        expenseForm.style.opacity = '0.7';
+        setTimeout(() => {
+          expenseForm.reset();
+          expenseForm.style.opacity = '1';
+        }, 300);
+        
+        loadExpenses();
+        showNotification(type === 'despesa' ? 'Despesa adicionada!' : 'Receita adicionada!', 'success');
+      } catch (error) {
+        console.error('Erro ao adicionar despesa:', error);
+        showNotification('Erro ao adicionar despesa', 'danger');
+      }
+    });
+
+    // Carregar despesas para tabela
+    async function loadExpenses() {
+      try {
+        let url = `/api/expenses/${currentUserId}`;
+        if (currentFamily) {
+          url += `?familyId=${currentFamily}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('Erro ao carregar despesas');
+        }
+
+        const expenses = await response.json();
+        expensesTbody.innerHTML = '';
+
+        if (expenses.length === 0) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              Nenhuma despesa ou receita cadastrada ainda.
+            </td>
+          `;
+          expensesTbody.appendChild(tr);
+          return;
+        }
+
+        // Ordena por data de vencimento
+        expenses.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+        expenses.forEach((exp, index) => {
+          const tr = document.createElement('tr');
+          const vencDate = new Date(exp.dueDate);
+          const hoje = new Date();
+          const diffDias = (vencDate - hoje) / (1000 * 60 * 60 * 24);
+
+          if (exp.type === 'despesa' && diffDias >= 0 && diffDias <= 3) {
+            tr.style.backgroundColor = 'rgba(255, 165, 0, 0.15)';
+            tr.title = 'Vencimento próximo!';
+          } else if (exp.type === 'despesa' && diffDias < 0) {
+            tr.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+            tr.title = 'Vencimento atrasado!';
+          }
+
+          // Animação de entrada
+          tr.style.opacity = '0';
+          tr.style.transform = 'translateY(20px)';
+          tr.style.transitionDelay = `${index * 0.05}s`;
+          
+          setTimeout(() => {
+            tr.style.opacity = '1';
+            tr.style.transform = 'translateY(0)';
+          }, 50);
+
+          tr.innerHTML = `
+            <td data-label="Descrição">${exp.description}</td>
+            <td data-label="Valor">R$ ${exp.amount.toFixed(2)}</td>
+            <td data-label="Responsável">${exp.responsavel || '-'}</td>
+            <td data-label="Tipo">${exp.type.charAt(0).toUpperCase() + exp.type.slice(1)}</td>
+            <td data-label="Vencimento">${new Date(exp.dueDate).toLocaleDateString()}</td>
+            <td data-label="Pagamento">${exp.paymentType}</td>
+            <td data-label="Observações">${exp.notes || '-'}</td>
+            <td data-label="Ações">
+              <button class="btn-delete" aria-label="Excluir despesa" data-id="${exp._id}">
+                <span>✖</span>
+                <span>Excluir</span>
+              </button>
+            </td>
+          `;
+          expensesTbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar despesas:', error);
+        showNotification('Erro ao carregar despesas', 'danger');
+      }
+    }
+
+    // Excluir despesa
+    expensesTbody.addEventListener('click', async e => {
+      if (e.target.classList.contains('btn-delete')) {
+        const id = e.target.dataset.id;
+        
+        // Animação de exclusão
+        const row = e.target.closest('tr');
+        row.style.transform = 'translateX(20px)';
+        row.style.opacity = '0';
+        
+        try {
+          const response = await fetch(`/api/expenses/${id}`, {
+            method: 'DELETE'
+          });
+
+          if (!response.ok) {
+            throw new Error('Erro ao excluir despesa');
+          }
+
+          // Adiciona ao histórico
+          const expense = expensesTbody.querySelector(`[data-id="${id}"]`);
+          const desc = expense.querySelector('td[data-label="Descrição"]').textContent;
+          const valor = expense.querySelector('td[data-label="Valor"]').textContent;
+          const tipo = expense.querySelector('td[data-label="Tipo"]').textContent.toLowerCase();
+          
+          await addHistoryEntry(
+            `${tipo === 'despesa' ? 'Despesa' : 'Receita'} removida`, 
+            `${desc} - ${valor}`,
+            currentFamily ? 'family' : 'user'
+          );
+
+          setTimeout(() => {
+            loadExpenses();
+            showNotification('Item removido.', 'success');
+          }, 300);
+        } catch (error) {
+          console.error('Erro ao excluir despesa:', error);
+          showNotification('Erro ao excluir despesa', 'danger');
+        }
+      }
+    });
+
+    // Verifica despesas próximas do vencimento
+    async function checkExpiringExpenses() {
+      if (!currentUserId) return;
+      
+      try {
+        let url = `/api/expenses/${currentUserId}`;
+        if (currentFamily) {
+          url += `?familyId=${currentFamily}`;
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('Erro ao verificar vencimentos');
+        }
+
+        const expenses = await response.json();
+        const hoje = new Date();
+        const hojeStr = hoje.toISOString().split('T')[0];
+        const amanha = new Date(hoje);
+        amanha.setDate(amanha.getDate() + 1);
+        const amanhaStr = amanha.toISOString().split('T')[0];
+        
+        const vencHoje = expenses.filter(exp => 
+          exp.type === 'despesa' && 
+          new Date(exp.dueDate).toISOString().split('T')[0] === hojeStr
+        );
+        
+        const vencAmanha = expenses.filter(exp => 
+          exp.type === 'despesa' && 
+          new Date(exp.dueDate).toISOString().split('T')[0] === amanhaStr
+        );
+        
+        const vencidas = expenses.filter(exp => 
+          exp.type === 'despesa' && 
+          new Date(exp.dueDate) < hoje &&
+          new Date(exp.dueDate).toISOString().split('T')[0] !== hojeStr
+        );
+
+        if (vencHoje.length > 0) {
+          showNotification(`⚠️ ${vencHoje.length} despesa(s) vence(m) hoje!`, 'warning');
+        }
+        
+        if (vencAmanha.length > 0) {
+          showNotification(`⚠️ ${vencAmanha.length} despesa(s) vence(m) amanhã!`, 'warning');
+        }
+        
+        if (vencidas.length > 0) {
+          showNotification(`❌ ${vencidas.length} despesa(s) vencida(s)!`, 'danger');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar vencimentos:', error);
+      }
+    }
+
+    function startExpiryCheck() {
+      // Limpa intervalo anterior se existir
+      if (checkExpiryInterval) {
+        clearInterval(checkExpiryInterval);
+      }
+      
+      // Verifica a cada hora
+      checkExpiryInterval = setInterval(checkExpiringExpenses, 60 * 60 * 1000);
+    }
+
+    // --- Família ---
+    btnFamilyToggle.addEventListener('click', () => {
+      const expanded = btnFamilyToggle.getAttribute('aria-expanded') === 'true';
+      btnFamilyToggle.setAttribute('aria-expanded', (!expanded).toString());
+      familySection.setAttribute('aria-hidden', expanded.toString());
+      
+      // Animação de toggle
+      if (!expanded) {
+        familySection.style.display = 'block';
+        familySection.style.opacity = '0';
+        familySection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          familySection.style.opacity = '1';
+          familySection.style.transform = 'translateY(0)';
+          familySection.focus();
+        }, 50);
+      } else {
+        familySection.style.opacity = '0';
+        familySection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          familySection.style.display = 'none';
+        }, 300);
+      }
+      
+      updateFamilyUI();
+    });
+
+    async function updateFamilyUI() {
+      if (!currentUserId) return;
+
+      try {
+        const response = await fetch(`/api/users/${currentUser}`);
+        if (!response.ok) {
+          throw new Error('Erro ao carregar informações do usuário');
+        }
+
+        const user = await response.json();
+        
+        if (user.families && user.families.length > 0) {
+          // Assumindo que o usuário está em apenas uma família por enquanto
+          currentFamily = user.families[0]._id;
+          familyInfo.textContent = `Você está na família: "${user.families[0].name}" (Código: ${user.families[0].code})`;
+          btnExitFamily.hidden = false;
+          btnCreateFamily.disabled = true;
+          btnJoinFamily.disabled = true;
+          familyNameInput.disabled = true;
+          familyCodeInput.disabled = true;
+        } else {
+          currentFamily = null;
+          familyInfo.textContent = 'Você não está em nenhuma família.';
+          btnExitFamily.hidden = true;
+          btnCreateFamily.disabled = false;
+          btnJoinFamily.disabled = false;
+          familyNameInput.disabled = false;
+          familyCodeInput.disabled = false;
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar UI da família:', error);
+      }
+    }
+
+    btnCreateFamily.addEventListener('click', async () => {
+      const name = familyNameInput.value.trim();
+      if (name.length < 3) {
+        showNotification('Nome da família deve ter ao menos 3 caracteres.', 'warning');
+        return;
+      }
+      
+      // Animação de confirmação
+      btnCreateFamily.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        btnCreateFamily.style.transform = 'scale(1)';
+      }, 200);
+
+      try {
+        const response = await fetch('/api/families', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: name,
+            userId: currentUserId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao criar família');
+        }
+
+        const data = await response.json();
+        currentFamily = data.family._id;
+        
+        // Adiciona ao histórico
+        await addHistoryEntry('Família criada', `Nome: ${name} (Código: ${data.family.code})`, 'family');
+        await addHistoryEntry('Entrou na família', `Usuário ${currentUser} entrou na família`, 'family');
+
+        updateFamilyUI();
+        loadExpenses();
+        showNotification(`Família "${name}" criada! Código: ${data.family.code}`, 'success');
+        
+        familyNameInput.value = '';
+        familyCodeInput.value = '';
+      } catch (error) {
+        console.error('Erro ao criar família:', error);
+        showNotification('Erro ao criar família', 'danger');
+      }
+    });
+
+    btnJoinFamily.addEventListener('click', async () => {
+      const code = familyCodeInput.value.trim().toUpperCase();
+      
+      if (code.length !== 6) {
+        showNotification('O código da família deve ter exatamente 6 caracteres.', 'warning');
+        return;
+      }
+      
+      // Animação de confirmação
+      btnJoinFamily.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        btnJoinFamily.style.transform = 'scale(1)';
+      }, 200);
+
+      try {
+        const response = await fetch('/api/families/join', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            code: code,
+            userId: currentUserId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao entrar na família');
+        }
+
+        const data = await response.json();
+        currentFamily = data.family._id;
+        
+        // Adiciona ao histórico
+        await addHistoryEntry('Entrou na família', `Usuário ${currentUser} entrou na família`, 'family');
+
+        updateFamilyUI();
+        loadExpenses();
+        showNotification(`Você entrou na família "${data.family.name}"!`, 'success');
+        
+        familyNameInput.value = '';
+        familyCodeInput.value = '';
+      } catch (error) {
+        console.error('Erro ao entrar na família:', error);
+        showNotification(error.message || 'Erro ao entrar na família', 'danger');
+      }
+    });
+
+    btnExitFamily.addEventListener('click', async () => {
+      if (!currentFamily) return;
+      
+      // Animação de confirmação
+      btnExitFamily.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        btnExitFamily.style.transform = 'scale(1)';
+      }, 200);
+
+      try {
+        // Adiciona ao histórico antes de sair
+        await addHistoryEntry('Saiu da família', `Usuário ${currentUser} saiu da família`, 'family');
+
+        // Remove usuário da família
+        const response = await fetch(`/api/families/${currentFamily}/leave`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            userId: currentUserId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao sair da família');
+        }
+
+        currentFamily = null;
+        updateFamilyUI();
+        loadExpenses();
+        showNotification('Você saiu da família.', 'success');
+      } catch (error) {
+        console.error('Erro ao sair da família:', error);
+        showNotification('Erro ao sair da família', 'danger');
+      }
+    });
+
+    // --- Datas Importantes ---
+    btnDatesToggle.addEventListener('click', () => {
+      const expanded = btnDatesToggle.getAttribute('aria-expanded') === 'true';
+      btnDatesToggle.setAttribute('aria-expanded', (!expanded).toString());
+      datesSection.setAttribute('aria-hidden', expanded.toString());
+      
+      // Animação de toggle
+      if (!expanded) {
+        datesSection.style.display = 'block';
+        datesSection.style.opacity = '0';
+        datesSection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          datesSection.style.opacity = '1';
+          datesSection.style.transform = 'translateY(0)';
+          datesSection.focus();
+        }, 50);
+      } else {
+        datesSection.style.opacity = '0';
+        datesSection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          datesSection.style.display = 'none';
+        }, 300);
+      }
+    });
+
+    async function loadImportantDates() {
+      try {
+        const response = await fetch(`/api/users/${currentUser}/dates`);
+        if (!response.ok) {
+          throw new Error('Erro ao carregar datas importantes');
+        }
+
+        const dates = await response.json();
+        datesContainer.innerHTML = '';
+        
+        if (dates.length === 0) {
+          datesContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Nenhuma data importante cadastrada ainda.</p>';
+          return;
+        }
+        
+        // Ordena por data
+        dates.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        dates.forEach(date => {
+          const dateCard = document.createElement('div');
+          dateCard.className = 'date-card';
+          
+          dateCard.innerHTML = `
+            <h3>${date.title}</h3>
+            <p><span class="date">${new Date(date.date).toLocaleDateString()}</span></p>
+            ${date.notes ? `<p>${date.notes}</p>` : ''}
+            <button class="btn-delete" data-id="${date._id}" style="margin-top: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.9rem;">
+              <span>✖</span>
+              <span>Remover</span>
+            </button>
+          `;
+          
+          datesContainer.appendChild(dateCard);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar datas importantes:', error);
+        showNotification('Erro ao carregar datas importantes', 'danger');
+      }
+    }
+
+    dateForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      
+      const title = dateForm.querySelector('#date-title').value.trim();
+      const date = dateForm.querySelector('#date-value').value;
+      const notes = dateForm.querySelector('#date-notes').value.trim();
+      
+      if (!title || !date) {
+        showNotification('Preencha pelo menos título e data.', 'warning');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/dates', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title,
+            date,
+            notes,
+            userId: currentUserId
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao adicionar data importante');
+        }
+
+        // Adiciona ao histórico
+        await addHistoryEntry('Data importante adicionada', `${title} - ${new Date(date).toLocaleDateString()}`);
+        
+        loadImportantDates();
+        dateForm.reset();
+        showNotification('Data importante adicionada!', 'success');
+      } catch (error) {
+        console.error('Erro ao adicionar data importante:', error);
+        showNotification('Erro ao adicionar data importante', 'danger');
+      }
+    });
+
+    datesContainer.addEventListener('click', async e => {
+      if (e.target.closest('.btn-delete')) {
+        const id = e.target.closest('.btn-delete').dataset.id;
+        
+        try {
+          const dateCard = e.target.closest('.date-card');
+          const title = dateCard.querySelector('h3').textContent;
+          const date = dateCard.querySelector('.date').textContent;
+          
+          const response = await fetch(`/api/dates/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              userId: currentUserId
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Erro ao remover data importante');
+          }
+
+          // Adiciona ao histórico
+          await addHistoryEntry('Data importante removida', `${title} - ${date}`);
+          
+          loadImportantDates();
+          showNotification('Data removida.', 'success');
+        } catch (error) {
+          console.error('Erro ao remover data importante:', error);
+          showNotification('Erro ao remover data importante', 'danger');
+        }
+      }
+    });
+
+    // --- Histórico de Alterações ---
+    btnHistoryToggle.addEventListener('click', () => {
+      const expanded = btnHistoryToggle.getAttribute('aria-expanded') === 'true';
+      btnHistoryToggle.setAttribute('aria-expanded', (!expanded).toString());
+      historySection.setAttribute('aria-hidden', expanded.toString());
+      
+      // Animação de toggle
+      if (!expanded) {
+        historySection.style.display = 'block';
+        historySection.style.opacity = '0';
+        historySection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          historySection.style.opacity = '1';
+          historySection.style.transform = 'translateY(0)';
+          historySection.focus();
+        }, 50);
+      } else {
+        historySection.style.opacity = '0';
+        historySection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          historySection.style.display = 'none';
+        }, 300);
+      }
+    });
+
+    async function loadHistory() {
+      try {
+        let userHistory = [];
+        let familyHistory = [];
+        
+        // Busca histórico do usuário
+        const userResponse = await fetch(`/api/users/${currentUser}/history`);
+        if (userResponse.ok) {
+          userHistory = await userResponse.json();
+        }
+        
+        // Se estiver em uma família, busca histórico da família
+        if (currentFamily) {
+          const familyResponse = await fetch(`/api/families/${currentFamily}/history`);
+          if (familyResponse.ok) {
+            familyHistory = await familyResponse.json();
+          }
+        }
+        
+        // Combina os históricos
+        const history = [...userHistory, ...familyHistory];
+        historyContainer.innerHTML = '';
+        
+        if (history.length === 0) {
+          historyContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Nenhum registro no histórico ainda.</p>';
+          return;
+        }
+        
+        // Ordena por data (mais recente primeiro)
+        history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        history.forEach(item => {
+          const historyItem = document.createElement('div');
+          historyItem.className = 'history-item';
+          
+          historyItem.innerHTML = `
+            <div class="date">${new Date(item.timestamp).toLocaleString()}</div>
+            <div class="action">${item.action}</div>
+            ${item.details ? `<div class="details">${item.details}</div>` : ''}
+            ${item.scope === 'family' ? `<div style="font-size: 0.8rem; color: var(--accent); margin-top: 0.3rem;">Família</div>` : ''}
+          `;
+          
+          historyContainer.appendChild(historyItem);
+        });
+      } catch (error) {
+        console.error('Erro ao carregar histórico:', error);
+        showNotification('Erro ao carregar histórico', 'danger');
+      }
+    }
+
+    async function addHistoryEntry(action, details = '', scope = 'user') {
+      try {
+        const response = await fetch('/api/history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action,
+            details,
+            scope,
+            userId: currentUserId,
+            familyId: scope === 'family' ? currentFamily : undefined
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao adicionar histórico');
+        }
+
+        // Atualiza a exibição se a seção estiver visível
+        if (historySection.getAttribute('aria-hidden') === 'false') {
+          loadHistory();
+        }
+      } catch (error) {
+        console.error('Erro ao adicionar histórico:', error);
+      }
+    }
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+      // Verificar se há usuário logado (simplificado para exemplo)
+      // Na implementação real, você deve verificar o token de autenticação
+      const lastUser = localStorage.getItem('lastUser');
+      if (lastUser) {
+        usernameInput.value = lastUser;
+        // Aqui você deve implementar a verificação de autenticação real
+      }
+    });
+  </script>
+</body>
+</html>
