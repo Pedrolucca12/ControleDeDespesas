@@ -300,3 +300,18 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
+// --- Keep Awake (ping a cada 40 segundos) --- //
+const https = require('https');
+const URL_TO_PING = 'https://controlededespesas.onrender.com';
+
+function pingSite() {
+  https.get(URL_TO_PING, (res) => {
+    console.log(`[PING] ${new Date().toISOString()} - Status: ${res.statusCode}`);
+  }).on('error', (e) => {
+    console.error(`[PING ERROR] ${e.message}`);
+  });
+}
+
+setInterval(pingSite, 40 * 1000); // A cada 40 segundos
+pingSite(); // Envia o primeiro ping logo ao iniciar
