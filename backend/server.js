@@ -33,7 +33,6 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   photoPath: { type: String, required: true },
   lastLogin: { type: Date, default: Date.now },
-  families: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Family' }],
   expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Expense' }],
   importantDates: [{ 
     title: String,
@@ -97,7 +96,6 @@ app.post('/api/users', upload.single('photo'), async (req, res) => {
       username,
       photoPath: '/uploads/' + req.file.filename,
       lastLogin: new Date(),
-      families: [],
       expenses: [],
       importantDates: [],
       history: []
@@ -114,7 +112,6 @@ app.post('/api/users', upload.single('photo'), async (req, res) => {
 app.get('/api/users/:username', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username })
-      .populate('families')
       .populate('expenses')
       .populate('history.user');
       
