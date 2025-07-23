@@ -623,6 +623,7 @@
     const API_BASE_URL = 'https://controlededespesas.onrender.com/api';
     const LOCAL_STORAGE_KEY = 'expense_tracker_data';
     const AUTH_TOKEN_KEY = 'expense_tracker_auth_token';
+    const CURRENT_USER_KEY = 'expense_tracker_current_user';
     
     // Elementos
     const loginScreen = document.getElementById('login-screen');
@@ -691,15 +692,19 @@
 
     // Verificar se usuário está logado no navegador atual
     function checkLoggedIn() {
-      const lastUser = localStorage.getItem('lastUser');
       const browserToken = localStorage.getItem(AUTH_TOKEN_KEY);
+      const currentUserData = localStorage.getItem(CURRENT_USER_KEY);
       
-      if (lastUser && browserToken) {
+      if (!browserToken || !currentUserData) return false;
+      
+      try {
+        const userData = JSON.parse(currentUserData);
         const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
-        const user = localData.users.find(u => u.username === lastUser && u.browserToken === browserToken);
+        
+        // Verifica se o usuário existe nos dados locais
+        const user = localData.users.find(u => u._id === userData.id && u.browserToken === browserToken);
         
         if (user) {
-          // Usuário já está logado neste navegador
           currentUser = user.username;
           currentUserId = user._id;
           currentUserPhoto = user.photoPath;
@@ -707,6 +712,8 @@
           // Esconder tela de login e mostrar app
           loginScreen.style.display = 'none';
           app.style.display = 'block';
+          app.style.opacity = '1';
+          app.style.transform = 'translateY(0)';
           
           // Carregar dados
           loadExpenses();
@@ -720,8 +727,20 @@
           }
           return true;
         }
+      } catch (error) {
+        console.error('Erro ao verificar usuário logado:', error);
       }
       return false;
+    }
+
+    // Salvar dados do usuário atual
+    function saveCurrentUser() {
+      if (currentUserId && currentUser) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({
+          id: currentUserId,
+          username: currentUser
+        }));
+      }
     }
 
     // --- Funções para gerenciar contas ---
@@ -928,6 +947,9 @@
         currentUserId = user._id;
         currentUserPhoto = user.photoPath;
         
+        // Salva o usuário atual
+        saveCurrentUser();
+        
         // Atualiza o último login no localStorage
         const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
         const userIndex = localData.users.findIndex(u => u._id === user._id);
@@ -959,15 +981,15 @@
           currentUser = newUser.username;
           currentUserId = newUser._id;
           currentUserPhoto = newUser.photoPath;
+          
+          // Salva o usuário atual
+          saveCurrentUser();
         } catch (createError) {
           showNotification('Erro ao criar conta: ' + createError.message, 'danger');
           return;
         }
       }
 
-      // Salva o último usuário logado
-      localStorage.setItem('lastUser', currentUser);
-      
       // Transição de tela
       loginScreen.style.opacity = '0';
       loginScreen.style.transform = 'translateY(-20px)';
@@ -1735,6 +1757,7 @@
                 
                 // Atualiza o currentUserId com o ID do servidor
                 currentUserId = serverUser.user._id;
+                saveCurrentUser();
                 
                 // Atualiza localStorage
                 const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
