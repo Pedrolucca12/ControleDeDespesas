@@ -55,7 +55,12 @@ const userSchema = new mongoose.Schema({
     details: String,
     timestamp: { type: Date, default: Date.now },
     scope: { type: String, enum: ['user', 'family'], default: 'user' }
-  }]
+  }],
+  settings: {
+    weeklyReport: { type: Boolean, default: false },
+    monthlyReport: { type: Boolean, default: false },
+    darkTheme: { type: Boolean, default: true }
+  }
 }, { timestamps: true });
 
 const expenseSchema = new mongoose.Schema({
@@ -84,22 +89,32 @@ app.post('/api/users', upload.single('photo'), async (req, res) => {
     const { username, browserToken } = req.body;
     if (!username || !browserToken || !req.file) return res.status(400).json({ error: 'Campos obrigatórios' });
 
+    // Verifica se usuário já existe
     const userExists = await User.findOne({ username });
     if (userExists) return res.status(400).json({ error: 'Usuário já existe' });
 
+    // Verifica se token já está em uso
     const tokenExists = await User.findOne({ browserToken });
     if (tokenExists) return res.status(400).json({ error: 'Dispositivo já possui uma conta' });
 
     const user = await new User({
       username,
       browserToken,
-      photoPath: '/uploads/' + req.file.filename
+      photoPath: '/uploads/' + req.file.filename,
+      settings: {
+        weeklyReport: false,
+        monthlyReport: false,
+        darkTheme: true
+      }
     }).save();
 
     const userData = user.toObject();
     delete userData.browserToken;
     res.status(201).json({ message: 'Usuário criado!', user: userData });
   } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ error: 'Nome de usuário já existe' });
+    }
     res.status(500).json({ error: 'Erro interno ao criar usuário' });
   }
 });
@@ -122,6 +137,19 @@ app.patch('/api/users/:id/last-login', async (req, res) => {
   res.json({ success: true });
 });
 
+app.patch('/api/users/:id/settings', async (req, res) => {
+  const { browserToken, settings } = req.body;
+  const updated = await User.findOneAndUpdate(
+    { _id: req.params.id, browserToken },
+    { settings },
+    { new: true }
+  );
+  if (!updated) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+  res.json({ success: true, settings: updated.settings });
+});
+
+// Rotas de despesas - permitem descrições duplicadas
 app.post('/api/expenses', async (req, res) => {
   const { description, amount, type, dueDate, paymentType, responsavel, notes, userId, browserToken } = req.body;
   if (!description || !amount || !type || !dueDate || !paymentType || !responsavel || !userId || !browserToken)
@@ -130,18 +158,22 @@ app.post('/api/expenses', async (req, res) => {
   const user = await User.findOne({ _id: userId, browserToken });
   if (!user) return res.status(403).json({ error: 'Não autorizado' });
 
-  const expense = await new Expense({
-    description, amount, type, dueDate, paymentType, responsavel, notes, user: userId
-  }).save();
+  try {
+    const expense = await new Expense({
+      description, amount, type, dueDate, paymentType, responsavel, notes, user: userId
+    }).save();
 
-  await User.findByIdAndUpdate(userId, {
-    $push: {
-      expenses: expense._id,
-      history: { action: `${type === 'despesa' ? 'Despesa' : 'Receita'} adicionada`, details: `${description} - R$ ${amount}` }
-    }
-  });
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        expenses: expense._id,
+        history: { action: `${type === 'despesa' ? 'Despesa' : 'Receita'} adicionada`, details: `${description} - R$ ${amount}` }
+      }
+    });
 
-  res.status(201).json({ message: 'Despesa adicionada!', expense });
+    res.status(201).json({ message: 'Despesa adicionada!', expense });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao salvar despesa' });
+  }
 });
 
 app.get('/api/expenses/:userId', async (req, res) => {
@@ -168,6 +200,72 @@ app.delete('/api/expenses/:id', async (req, res) => {
   });
 
   res.json({ success: true });
+});
+
+// Rotas para relatórios
+app.get('/api/reports/weekly/:userId', async (req, res) => {
+  const { browserToken } = req.query;
+  const user = await User.findOne({ _id: req.params.userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
+
+  const today = new Date();
+  const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+  const lastDayOfWeek = new Date(today.setDate(today.getDate() + 6));
+
+  const expenses = await Expense.find({
+    user: req.params.userId,
+    dueDate: { $gte: firstDayOfWeek, $lte: lastDayOfWeek }
+  }).sort({ dueDate: 1 });
+
+  // Agrupa por tipo e dia para o gráfico
+  const groupedData = {};
+  expenses.forEach(exp => {
+    const day = new Date(exp.dueDate).toLocaleDateString('pt-BR', { weekday: 'short' });
+    if (!groupedData[day]) groupedData[day] = { despesa: 0, receita: 0 };
+    groupedData[day][exp.type] += exp.amount;
+  });
+
+  res.json({
+    expenses,
+    chartData: {
+      labels: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+      despesaData: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => groupedData[day] ? groupedData[day].despesa : 0),
+      receitaData: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => groupedData[day] ? groupedData[day].receita : 0)
+    }
+  });
+});
+
+app.get('/api/reports/monthly/:userId', async (req, res) => {
+  const { browserToken } = req.query;
+  const user = await User.findOne({ _id: req.params.userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
+
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  const expenses = await Expense.find({
+    user: req.params.userId,
+    dueDate: { $gte: firstDayOfMonth, $lte: lastDayOfMonth }
+  }).sort({ dueDate: 1 });
+
+  // Agrupa por tipo de pagamento para o gráfico
+  const paymentTypes = ['dinheiro', 'cartão', 'boleto', 'transferência', 'outro'];
+  const groupedData = {};
+  
+  paymentTypes.forEach(type => {
+    groupedData[type] = expenses
+      .filter(exp => exp.paymentType === type)
+      .reduce((sum, exp) => sum + exp.amount, 0);
+  });
+
+  res.json({
+    expenses,
+    chartData: {
+      labels: paymentTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)),
+      data: paymentTypes.map(type => groupedData[type])
+    }
+  });
 });
 
 // Datas importantes
@@ -203,12 +301,14 @@ app.delete('/api/dates/:id', async (req, res) => {
   const dateToRemove = user.importantDates.find(d => d._id.toString() === req.params.id);
   if (!dateToRemove) return res.status(404).json({ error: 'Data não encontrada' });
 
-  await User.findByIdAndUpdate(userId, {
-    $pull: { importantDates: { _id: req.params.id } },
-    $push: { history: { action: 'Data importante removida', details: `${dateToRemove.title} - ${new Date(dateToRemove.date).toLocaleDateString()}` } }
-  });
-
-  res.json({ success: true });
+await User.findByIdAndUpdate(userId, {
+  $pull: { importantDates: { _id: req.params.id } },
+  $push: {
+    history: {
+      action: 'Data importante removida',
+      details: `${dateToRemove.title} - ${new Date(dateToRemove.date).toLocaleDateString()}`
+    }
+  }
 });
 
 // Histórico
@@ -254,8 +354,8 @@ function pingSite() {
     console.error("Erro no ping:", e);
   });
 }
-setInterval(pingSite, 14 * 60 * 1000);
+setInterval(pingSite, 40 * 1000);
 
 // Graceful shutdown
 process.on('SIGTERM', () => server.close(() => process.exit(0)));
-process.on('SIGINT', () => server.close(() => process.exit(0)));
+process.on('SIGINT', () => server.close(() => process.exit(0)));})  

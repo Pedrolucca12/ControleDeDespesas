@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --primary: #4a6bff;
@@ -187,6 +188,120 @@
       transition: all 0.3s;
     }
 
+    /* Configurações */
+    #settings-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+      transition: all 0.3s;
+    }
+
+    #settings-btn:hover {
+      background-color: var(--primary-dark);
+      transform: rotate(30deg);
+    }
+
+    #settings-menu {
+      position: fixed;
+      top: 0;
+      right: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: var(--card-bg-dark);
+      box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      transition: right 0.3s;
+      z-index: 999;
+      overflow-y: auto;
+    }
+
+    #settings-menu.show {
+      right: 0;
+    }
+
+    .settings-option {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background-color: var(--card-bg);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .settings-option:hover {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 24px;
+      float: right;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    /* Relatórios */
+    .report-container {
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: var(--card-bg);
+      border-radius: 5px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 1rem;
+    }
+
     /* Formulário */
     #expense-form {
       display: grid;
@@ -328,7 +443,8 @@
     }
 
     #important-dates-section,
-    #history-section {
+    #history-section,
+    #reports-section {
       display: none;
       opacity: 0;
       transform: translateY(-20px);
@@ -442,6 +558,10 @@
       .container {
         padding: 1rem;
       }
+
+      #settings-menu {
+        width: 250px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -481,10 +601,51 @@
       .btn-delete span:last-child {
         display: none;
       }
+
+      #settings-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+      }
+
+      #settings-menu {
+        width: 100%;
+        right: -100%;
+      }
+
+      #settings-menu.show {
+        right: 0;
+      }
     }
   </style>
 </head>
 <body>
+  <button id="settings-btn" aria-label="Configurações">⚙️</button>
+  <div id="settings-menu">
+    <h2>Configurações</h2>
+    <div class="settings-option" id="weekly-report-toggle">
+      <span>Relatório Semanal</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="weekly-report-checkbox">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-option" id="monthly-report-toggle">
+      <span>Relatório Mensal</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="monthly-report-checkbox">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="settings-option" id="theme-toggle">
+      <span>Tema Escuro</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="theme-checkbox" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
   <div class="main-content">
     <div class="container" role="main" aria-live="polite">
       <h1>💰 Controle de Despesas Pessoais</h1>
@@ -570,6 +731,56 @@
           </table>
         </div>
         
+        <!-- Seção de Relatórios -->
+        <button id="btn-reports-toggle" class="section-toggle" aria-expanded="false" aria-controls="reports-section">
+          <span>📊</span>
+          <span>Relatórios</span>
+        </button>
+        
+        <section id="reports-section" aria-label="Relatórios" aria-hidden="true" tabindex="0">
+          <h2>Relatórios</h2>
+          
+          <div id="weekly-report" class="report-container" style="display: none;">
+            <h3>Relatório Semanal</h3>
+            <div class="chart-container">
+              <canvas id="weekly-chart"></canvas>
+            </div>
+            <div class="table-container">
+              <table aria-label="Relatório semanal de despesas">
+                <thead>
+                  <tr>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Tipo</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody id="weekly-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div id="monthly-report" class="report-container" style="display: none;">
+            <h3>Relatório Mensal</h3>
+            <div class="chart-container">
+              <canvas id="monthly-chart"></canvas>
+            </div>
+            <div class="table-container">
+              <table aria-label="Relatório mensal de despesas">
+                <thead>
+                  <tr>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Tipo</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody id="monthly-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        
         <!-- Seção de Datas Importantes -->
         <button id="btn-dates-toggle" class="section-toggle" aria-expanded="false" aria-controls="important-dates-section">
           <span>📅</span>
@@ -644,7 +855,24 @@
     const historySection = document.getElementById('history-section');
     const historyContainer = document.getElementById('history-container');
 
+    const btnReportsToggle = document.getElementById('btn-reports-toggle');
+    const reportsSection = document.getElementById('reports-section');
+    const weeklyReport = document.getElementById('weekly-report');
+    const monthlyReport = document.getElementById('monthly-report');
+    const weeklyTbody = document.getElementById('weekly-tbody');
+    const monthlyTbody = document.getElementById('monthly-tbody');
+
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsMenu = document.getElementById('settings-menu');
+    const weeklyCheckbox = document.getElementById('weekly-report-checkbox');
+    const monthlyCheckbox = document.getElementById('monthly-report-checkbox');
+    const themeCheckbox = document.getElementById('theme-checkbox');
+
     const notification = document.getElementById('notification');
+
+    // Gráficos
+    let weeklyChart = null;
+    let monthlyChart = null;
 
     // Estado
     let currentUser = null;
@@ -725,6 +953,9 @@
           if (isOnline) {
             syncLocalDataWithServer();
           }
+
+          // Carregar preferências
+          loadSettings();
           return true;
         }
       } catch (error) {
@@ -788,7 +1019,12 @@
           browserToken: browserToken,
           lastLogin: new Date().toISOString(),
           createdAt: new Date().toISOString(),
-          synced: false
+          synced: false,
+          settings: {
+            weeklyReport: false,
+            monthlyReport: false,
+            darkTheme: true
+          }
         };
         
         // Salvar no localStorage
@@ -1020,6 +1256,9 @@
       if (isOnline) {
         syncLocalDataWithServer();
       }
+
+      // Carrega configurações
+      loadSettings();
     });
 
     // --- Notificações ---
@@ -1136,6 +1375,10 @@
         
         loadExpenses();
         showNotification(type === 'despesa' ? 'Despesa adicionada!' : 'Receita adicionada!', 'success');
+        
+        // Atualiza relatórios se estiverem ativos
+        if (weeklyCheckbox.checked) loadWeeklyReport();
+        if (monthlyCheckbox.checked) loadMonthlyReport();
       } catch (error) {
         console.error('Erro ao adicionar despesa:', error);
         showNotification('Erro ao adicionar despesa', 'danger');
@@ -1291,6 +1534,10 @@
             loadExpenses();
             showNotification('Item removido.', 'success');
           }, 300);
+
+          // Atualiza relatórios se estiverem ativos
+          if (weeklyCheckbox.checked) loadWeeklyReport();
+          if (monthlyCheckbox.checked) loadMonthlyReport();
         } catch (error) {
           console.error('Erro ao excluir despesa:', error);
           showNotification('Erro ao excluir despesa', 'danger');
@@ -1718,6 +1965,357 @@
         }
       } catch (error) {
         console.error('Erro ao adicionar histórico:', error);
+      }
+    }
+
+    // --- Relatórios ---
+    btnReportsToggle.addEventListener('click', () => {
+      const expanded = btnReportsToggle.getAttribute('aria-expanded') === 'true';
+      btnReportsToggle.setAttribute('aria-expanded', (!expanded).toString());
+      reportsSection.setAttribute('aria-hidden', expanded.toString());
+      
+      // Animação de toggle
+      if (!expanded) {
+        reportsSection.style.display = 'block';
+        reportsSection.style.opacity = '0';
+        reportsSection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          reportsSection.style.opacity = '1';
+          reportsSection.style.transform = 'translateY(0)';
+          reportsSection.focus();
+        }, 50);
+
+        // Carrega relatórios ativos
+        if (weeklyCheckbox.checked) loadWeeklyReport();
+        if (monthlyCheckbox.checked) loadMonthlyReport();
+      } else {
+        reportsSection.style.opacity = '0';
+        reportsSection.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+          reportsSection.style.display = 'none';
+        }, 300);
+      }
+    });
+
+    async function loadWeeklyReport() {
+      try {
+        let expenses = [];
+        
+        // Tenta buscar do servidor se estiver online
+        if (isOnline) {
+          try {
+            const browserToken = localStorage.getItem(AUTH_TOKEN_KEY);
+            const response = await fetch(`${API_BASE_URL}/expenses/${currentUserId}?browserToken=${browserToken}`);
+            if (response.ok) {
+              expenses = await response.json();
+            }
+          } catch (serverError) {
+            console.error('Erro ao buscar despesas do servidor:', serverError);
+            // Continua com busca local
+          }
+        }
+        
+        // Se não encontrou no servidor ou está offline, busca local
+        if (expenses.length === 0) {
+          const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+          expenses = localData.expenses.filter(exp => exp.userId === currentUserId);
+        }
+        
+        // Filtra despesas da semana atual
+        const today = new Date();
+        const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+        const lastDayOfWeek = new Date(today.setDate(today.getDate() + 6));
+        
+        const weeklyExpenses = expenses.filter(exp => {
+          const expDate = new Date(exp.dueDate);
+          return expDate >= firstDayOfWeek && expDate <= lastDayOfWeek;
+        });
+        
+        // Atualiza tabela
+        weeklyTbody.innerHTML = '';
+        
+        if (weeklyExpenses.length === 0) {
+          weeklyTbody.innerHTML = `
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted);">
+                Nenhuma despesa ou receita nesta semana.
+              </td>
+            </tr>
+          `;
+        } else {
+          weeklyExpenses.forEach(exp => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${exp.description}</td>
+              <td>R$ ${exp.amount.toFixed(2)}</td>
+              <td>${exp.type === 'despesa' ? 'Despesa' : 'Receita'}</td>
+              <td>${new Date(exp.dueDate).toLocaleDateString()}</td>
+            `;
+            weeklyTbody.appendChild(tr);
+          });
+        }
+        
+        // Cria gráfico
+        const ctx = document.getElementById('weekly-chart').getContext('2d');
+        
+        // Agrupa por tipo e dia
+        const groupedData = {};
+        weeklyExpenses.forEach(exp => {
+          const day = new Date(exp.dueDate).toLocaleDateString('pt-BR', { weekday: 'short' });
+          if (!groupedData[day]) groupedData[day] = { despesa: 0, receita: 0 };
+          groupedData[day][exp.type] += exp.amount;
+        });
+        
+        const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const despesaData = days.map(day => groupedData[day] ? groupedData[day].despesa : 0);
+        const receitaData = days.map(day => groupedData[day] ? groupedData[day].receita : 0);
+        
+        if (weeklyChart) weeklyChart.destroy();
+        
+        weeklyChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: days,
+            datasets: [
+              {
+                label: 'Despesas',
+                data: despesaData,
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+              },
+              {
+                label: 'Receitas',
+                data: receitaData,
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Valor (R$)'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Dia da Semana'
+                }
+              }
+            }
+          }
+        });
+        
+        weeklyReport.style.display = 'block';
+      } catch (error) {
+        console.error('Erro ao carregar relatório semanal:', error);
+        showNotification('Erro ao carregar relatório semanal', 'danger');
+      }
+    }
+
+    async function loadMonthlyReport() {
+      try {
+        let expenses = [];
+        
+        // Tenta buscar do servidor se estiver online
+        if (isOnline) {
+          try {
+            const browserToken = localStorage.getItem(AUTH_TOKEN_KEY);
+            const response = await fetch(`${API_BASE_URL}/expenses/${currentUserId}?browserToken=${browserToken}`);
+            if (response.ok) {
+              expenses = await response.json();
+            }
+          } catch (serverError) {
+            console.error('Erro ao buscar despesas do servidor:', serverError);
+            // Continua com busca local
+          }
+        }
+        
+        // Se não encontrou no servidor ou está offline, busca local
+        if (expenses.length === 0) {
+          const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+          expenses = localData.expenses.filter(exp => exp.userId === currentUserId);
+        }
+        
+        // Filtra despesas do mês atual
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        const monthlyExpenses = expenses.filter(exp => {
+          const expDate = new Date(exp.dueDate);
+          return expDate >= firstDayOfMonth && expDate <= lastDayOfMonth;
+        });
+        
+        // Atualiza tabela
+        monthlyTbody.innerHTML = '';
+        
+        if (monthlyExpenses.length === 0) {
+          monthlyTbody.innerHTML = `
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-muted);">
+                Nenhuma despesa ou receita neste mês.
+              </td>
+            </tr>
+          `;
+        } else {
+          monthlyExpenses.forEach(exp => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${exp.description}</td>
+              <td>R$ ${exp.amount.toFixed(2)}</td>
+              <td>${exp.type === 'despesa' ? 'Despesa' : 'Receita'}</td>
+              <td>${new Date(exp.dueDate).toLocaleDateString()}</td>
+            `;
+            monthlyTbody.appendChild(tr);
+          });
+        }
+        
+        // Cria gráfico
+        const ctx = document.getElementById('monthly-chart').getContext('2d');
+        
+        // Agrupa por tipo de pagamento
+        const paymentTypes = ['dinheiro', 'cartão', 'boleto', 'transferência', 'outro'];
+        const groupedData = {};
+        
+        paymentTypes.forEach(type => {
+          groupedData[type] = monthlyExpenses
+            .filter(exp => exp.paymentType === type)
+            .reduce((sum, exp) => sum + exp.amount, 0);
+        });
+        
+        if (monthlyChart) monthlyChart.destroy();
+        
+        monthlyChart = new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: paymentTypes.map(type => type.charAt(0).toUpperCase() + type.slice(1)),
+            datasets: [{
+              data: paymentTypes.map(type => groupedData[type]),
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(153, 102, 255, 0.7)'
+              ],
+              borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              title: {
+                display: true,
+                text: 'Distribuição por Tipo de Pagamento'
+              }
+            }
+          }
+        });
+        
+        monthlyReport.style.display = 'block';
+      } catch (error) {
+        console.error('Erro ao carregar relatório mensal:', error);
+        showNotification('Erro ao carregar relatório mensal', 'danger');
+      }
+    }
+
+    // --- Configurações ---
+    settingsBtn.addEventListener('click', () => {
+      settingsMenu.classList.toggle('show');
+    });
+
+    // Fechar menu ao clicar fora
+    document.addEventListener('click', (e) => {
+      if (!settingsMenu.contains(e.target) )
+        settingsMenu.classList.remove('show');
+      }
+    );
+
+    weeklyCheckbox.addEventListener('change', (e) => {
+      updateSettings('weeklyReport', e.target.checked);
+      weeklyReport.style.display = e.target.checked ? 'block' : 'none';
+      if (e.target.checked) loadWeeklyReport();
+    });
+
+    monthlyCheckbox.addEventListener('change', (e) => {
+      updateSettings('monthlyReport', e.target.checked);
+      monthlyReport.style.display = e.target.checked ? 'block' : 'none';
+      if (e.target.checked) loadMonthlyReport();
+    });
+
+    themeCheckbox.addEventListener('change', (e) => {
+      updateSettings('darkTheme', e.target.checked);
+      document.documentElement.setAttribute('data-theme', e.target.checked ? 'dark' : 'light');
+    });
+
+    function loadSettings() {
+      const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+      const user = localData.users.find(u => u._id === currentUserId);
+      
+      if (user && user.settings) {
+        weeklyCheckbox.checked = user.settings.weeklyReport || false;
+        monthlyCheckbox.checked = user.settings.monthlyReport || false;
+        themeCheckbox.checked = user.settings.darkTheme !== false;
+        
+        weeklyReport.style.display = weeklyCheckbox.checked ? 'block' : 'none';
+        monthlyReport.style.display = monthlyCheckbox.checked ? 'block' : 'none';
+        document.documentElement.setAttribute('data-theme', themeCheckbox.checked ? 'dark' : 'light');
+        
+        if (weeklyCheckbox.checked) loadWeeklyReport();
+        if (monthlyCheckbox.checked) loadMonthlyReport();
+      }
+    }
+
+    function updateSettings(key, value) {
+      const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+      const userIndex = localData.users.findIndex(u => u._id === currentUserId);
+      
+      if (userIndex !== -1) {
+        if (!localData.users[userIndex].settings) {
+          localData.users[userIndex].settings = {};
+        }
+        localData.users[userIndex].settings[key] = value;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
+        
+        // Sincroniza com servidor se estiver online
+        if (isOnline) {
+          try {
+            fetch(`${API_BASE_URL}/users/${currentUserId}/settings`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                settings: localData.users[userIndex].settings,
+                browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
+              })
+            });
+          } catch (error) {
+            console.error('Erro ao sincronizar configurações:', error);
+            syncPending = true;
+          }
+        } else {
+          syncPending = true;
+        }
       }
     }
 
