@@ -650,7 +650,7 @@ app.post('/api/sync-data', async (req, res, next) => {
 
 // Rota raiz
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
 // Tratamento de rotas não encontradas
@@ -680,7 +680,7 @@ process.on('SIGINT', () => {
 
 // Keep Alive para Render.com
 const https = require('https');
-const URL_TO_PING = 'https://controlededespesas.onrender.com';
+const URL_TO_f = 'https://controlededespesas.onrender.com';
 
 function pingSite() {
   https.get(URL_TO_PING, (res) => {
