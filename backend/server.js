@@ -6,13 +6,14 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Configuração para armazenar fotos enviadas
 const uploadFolder = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadFolder)) {
   fs.mkdirSync(uploadFolder);
 }
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadFolder),
   filename: (req, file, cb) => {
@@ -20,63 +21,209 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
+
 const upload = multer({ storage });
 
 // Conexão com MongoDB
 const uri = "mongodb+srv://BancoDeDadosOWNER:BancoCONTROLEAdm165qwe@cluster0.chktvcs.mongodb.net/controledecontas?retryWrites=true&w=majority&appName=Cluster0";
-mongoose.connect(uri)
-  .then(() => console.log("✅ Conectado ao MongoDB Atlas!"))
-  .catch(err => console.error("❌ Erro ao conectar:", err));
 
-// --- Schemas ---
+mongoose.connect(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000
+})
+  .then(() => console.log("✅ Conectado ao MongoDB Atlas!"))
+  .catch(err => {
+    console.error("❌ Erro ao conectar:", err);
+    process.exit(1);
+  });
+
+// Schemas atualizados com validações
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  photoPath: { type: String, required: true },
-  browserToken: { type: String, required: true, unique: true },
-  lastLogin: { type: Date, default: Date.now },
-  expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Expense' }],
+  username: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    trim: true,
+    minlength: 2,
+    maxlength: 20
+  },
+  photoPath: { 
+    type: String, 
+    required: true 
+  },
+  browserToken: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },
+  lastLogin: { 
+    type: Date, 
+    default: Date.now 
+  },
+  expenses: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Expense' 
+  }],
   importantDates: [{ 
-    title: String,
-    date: Date,
-    notes: String,
-    createdAt: { type: Date, default: Date.now }
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 50
+    },
+    date: {
+      type: Date,
+      required: true
+    },
+    notes: {
+      type: String,
+      trim: true,
+      maxlength: 200
+    },
+    createdAt: { 
+      type: Date, 
+      default: Date.now 
+    }
   }],
   history: [{
-    action: String,
-    details: String,
-    timestamp: { type: Date, default: Date.now },
-    scope: { type: String, enum: ['user', 'family'], default: 'user' }
+    action: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100
+    },
+    details: {
+      type: String,
+      trim: true,
+      maxlength: 200
+    },
+    timestamp: { 
+      type: Date, 
+      default: Date.now 
+    },
+    scope: { 
+      type: String, 
+      enum: ['user', 'family'], 
+      default: 'user' 
+    }
   }],
-  families: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Family' }]
+  families: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Family' 
+  }]
+}, {
+  timestamps: true
 });
 
 const familySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  code: { type: String, required: true, unique: true, uppercase: true },
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Expense' }],
-  history: [{
-    action: String,
-    details: String,
-    timestamp: { type: Date, default: Date.now },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  name: { 
+    type: String, 
+    required: true,
+    trim: true,
+    maxlength: 50
+  },
+  code: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    uppercase: true,
+    length: 6
+  },
+  members: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
   }],
-  createdAt: { type: Date, default: Date.now },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+  expenses: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Expense' 
+  }],
+  history: [{
+    action: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100
+    },
+    details: {
+      type: String,
+      trim: true,
+      maxlength: 200
+    },
+    timestamp: { 
+      type: Date, 
+      default: Date.now 
+    },
+    user: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: 'User' 
+    }
+  }],
+  createdBy: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }
+}, {
+  timestamps: true
 });
 
 const expenseSchema = new mongoose.Schema({
-  description: { type: String, required: true },
-  amount: { type: Number, required: true },
-  type: { type: String, enum: ['despesa', 'receita'], required: true },
-  dueDate: { type: Date, required: true },
-  paymentType: { type: String, required: true },
-  responsavel: { type: String, required: true },
-  notes: String,
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  family: { type: mongoose.Schema.Types.ObjectId, ref: 'Family' },
-  createdAt: { type: Date, default: Date.now }
+  description: { 
+    type: String, 
+    required: true,
+    trim: true,
+    maxlength: 100
+  },
+  amount: { 
+    type: Number, 
+    required: true,
+    min: 0
+  },
+  type: { 
+    type: String, 
+    enum: ['despesa', 'receita'], 
+    required: true 
+  },
+  dueDate: { 
+    type: Date, 
+    required: true 
+  },
+  paymentType: { 
+    type: String, 
+    required: true,
+    enum: ['dinheiro', 'cartão', 'boleto', 'transferência', 'outro']
+  },
+  responsavel: { 
+    type: String, 
+    required: true,
+    trim: true,
+    maxlength: 50
+  },
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: 200
+  },
+  user: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
+  family: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Family' 
+  }
+}, {
+  timestamps: true
 });
+
+// Índices para melhor performance
+userSchema.index({ username: 1 });
+userSchema.index({ browserToken: 1 });
+familySchema.index({ code: 1 });
+expenseSchema.index({ user: 1 });
+expenseSchema.index({ family: 1 });
+expenseSchema.index({ dueDate: 1 });
 
 const User = mongoose.model('User', userSchema);
 const Family = mongoose.model('Family', familySchema);
@@ -88,12 +235,24 @@ app.use(express.json());
 app.use('/uploads', express.static(uploadFolder));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Middleware de tratamento de erros
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Erro interno do servidor' });
+});
+
 // Rotas de Usuário
-app.post('/api/users', upload.single('photo'), async (req, res) => {
+app.post('/api/users', upload.single('photo'), async (req, res, next) => {
   try {
     const { username, browserToken } = req.body;
-    if (!username || !browserToken) return res.status(400).json({ error: 'Nome de usuário e token do navegador são obrigatórios' });
-    if (!req.file) return res.status(400).json({ error: 'Foto obrigatória' });
+    
+    if (!username || !browserToken) {
+      return res.status(400).json({ error: 'Nome de usuário e token do navegador são obrigatórios' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Foto obrigatória' });
+    }
 
     // Verificar se username já existe
     const existingUser = await User.findOne({ username });
@@ -111,7 +270,6 @@ app.post('/api/users', upload.single('photo'), async (req, res) => {
       username,
       photoPath: '/uploads/' + req.file.filename,
       browserToken,
-      lastLogin: new Date(),
       expenses: [],
       importantDates: [],
       history: [],
@@ -119,36 +277,48 @@ app.post('/api/users', upload.single('photo'), async (req, res) => {
     });
 
     await user.save();
-    res.status(201).json({ message: 'Usuário criado!', user });
+    
+    // Remover campos sensíveis da resposta
+    const userResponse = user.toObject();
+    delete userResponse.browserToken;
+    
+    res.status(201).json({ message: 'Usuário criado!', user: userResponse });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao criar usuário' });
+    next(err);
   }
 });
 
-app.get('/api/users/:username', async (req, res) => {
+app.get('/api/users/:username', async (req, res, next) => {
   try {
     const { browserToken } = req.query;
-    if (!browserToken) return res.status(400).json({ error: 'Token do navegador é obrigatório' });
+    
+    if (!browserToken) {
+      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
+    }
 
     const user = await User.findOne({ 
       username: req.params.username,
       browserToken
-    }).populate('expenses').populate('families');
+    }).select('-browserToken -__v');
 
-    if (!user) return res.status(404).json({ error: 'Usuário não encontrado ou acesso não autorizado' });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado ou acesso não autorizado' });
+    }
+
     res.json(user);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao buscar usuário' });
+    next(err);
   }
 });
 
-app.patch('/api/users/:id/last-login', async (req, res) => {
+app.patch('/api/users/:id/last-login', async (req, res, next) => {
   try {
     const { browserToken } = req.body;
-    if (!browserToken) return res.status(400).json({ error: 'Token do navegador é obrigatório' });
     
+    if (!browserToken) {
+      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
+    }
+
     const user = await User.findOneAndUpdate(
       { 
         _id: req.params.id,
@@ -164,78 +334,12 @@ app.patch('/api/users/:id/last-login', async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao atualizar último login' });
-  }
-});
-
-// Rotas de Família
-app.post('/api/families', async (req, res) => {
-  try {
-    const { name, userId, browserToken } = req.body;
-    if (!name || !userId || !browserToken) return res.status(400).json({ error: 'Nome, ID do usuário e token do navegador são obrigatórios' });
-
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) return res.status(403).json({ error: 'Usuário não autorizado' });
-
-    // Gera código aleatório de 6 caracteres
-    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
-    
-    const family = new Family({
-      name,
-      code,
-      members: [userId],
-      expenses: [],
-      history: [],
-      createdBy: userId
-    });
-
-    await family.save();
-
-    // Adiciona família ao usuário
-    await User.findByIdAndUpdate(userId, { $push: { families: family._id } });
-
-    res.status(201).json({ message: 'Família criada!', family });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao criar família' });
-  }
-});
-
-app.post('/api/families/join', async (req, res) => {
-  try {
-    const { code, userId, browserToken } = req.body;
-    if (!code || !userId || !browserToken) return res.status(400).json({ error: 'Código, ID do usuário e token do navegador são obrigatórios' });
-
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) return res.status(403).json({ error: 'Usuário não autorizado' });
-
-    const family = await Family.findOne({ code: code.toUpperCase() });
-    if (!family) return res.status(404).json({ error: 'Família não encontrada' });
-
-    // Verifica se usuário já é membro
-    if (family.members.includes(userId)) {
-      return res.status(400).json({ error: 'Usuário já é membro desta família' });
-    }
-
-    // Adiciona usuário à família
-    family.members.push(userId);
-    await family.save();
-
-    // Adiciona família ao usuário
-    await User.findByIdAndUpdate(userId, { $push: { families: family._id } });
-
-    res.json({ message: 'Usuário adicionado à família!', family });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao entrar na família' });
+    next(err);
   }
 });
 
 // Rotas de Despesas
-app.post('/api/expenses', async (req, res) => {
+app.post('/api/expenses', async (req, res, next) => {
   try {
     const { 
       description, 
@@ -256,13 +360,23 @@ app.post('/api/expenses', async (req, res) => {
 
     // Verificar se o usuário existe e o token é válido
     const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) return res.status(403).json({ error: 'Usuário não autorizado' });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
+
+    // Verificar família se for despesa familiar
+    if (familyId) {
+      const family = await Family.findOne({ _id: familyId, members: userId });
+      if (!family) {
+        return res.status(403).json({ error: 'Acesso não autorizado a esta família' });
+      }
+    }
 
     const expense = new Expense({
       description,
       amount,
       type,
-      dueDate,
+      dueDate: new Date(dueDate),
       paymentType,
       responsavel,
       notes,
@@ -282,26 +396,32 @@ app.post('/api/expenses', async (req, res) => {
 
     res.status(201).json({ message: 'Despesa adicionada!', expense });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao adicionar despesa' });
+    next(err);
   }
 });
 
-app.get('/api/expenses/:userId', async (req, res) => {
+app.get('/api/expenses/:userId', async (req, res, next) => {
   try {
     const { familyId, browserToken } = req.query;
-    if (!browserToken) return res.status(400).json({ error: 'Token do navegador é obrigatório' });
+    
+    if (!browserToken) {
+      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
+    }
 
     // Verificar se o usuário existe e o token é válido
     const user = await User.findOne({ _id: req.params.userId, browserToken });
-    if (!user) return res.status(403).json({ error: 'Usuário não autorizado' });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
 
     let expenses;
 
     if (familyId) {
       // Verificar se o usuário é membro da família
       const family = await Family.findOne({ _id: familyId, members: req.params.userId });
-      if (!family) return res.status(403).json({ error: 'Acesso não autorizado a esta família' });
+      if (!family) {
+        return res.status(403).json({ error: 'Acesso não autorizado a esta família' });
+      }
 
       // Busca despesas da família
       expenses = await Expense.find({ family: familyId })
@@ -315,73 +435,184 @@ app.get('/api/expenses/:userId', async (req, res) => {
 
     res.json(expenses);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao buscar despesas' });
+    next(err);
+  }
+});
+
+app.delete('/api/expenses/:id', async (req, res, next) => {
+  try {
+    const { userId, browserToken } = req.body;
+    
+    if (!userId || !browserToken) {
+      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
+    }
+
+    // Verificar se o usuário existe e o token é válido
+    const user = await User.findOne({ _id: userId, browserToken });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
+
+    // Verificar se a despesa pertence ao usuário
+    const expense = await Expense.findOne({ _id: req.params.id, user: userId });
+    if (!expense) {
+      return res.status(404).json({ error: 'Despesa não encontrada ou não pertence ao usuário' });
+    }
+
+    // Remover a despesa
+    await Expense.deleteOne({ _id: req.params.id });
+
+    // Remover referência da despesa no usuário
+    await User.findByIdAndUpdate(userId, { $pull: { expenses: req.params.id } });
+
+    // Se for despesa familiar, remover referência na família também
+    if (expense.family) {
+      await Family.findByIdAndUpdate(expense.family, { $pull: { expenses: req.params.id } });
+    }
+
+    res.json({ success: true, message: 'Despesa removida com sucesso' });
+  } catch (err) {
+    next(err);
   }
 });
 
 // Rotas de Datas Importantes
-app.post('/api/dates', async (req, res) => {
+app.post('/api/dates', async (req, res, next) => {
   try {
     const { title, date, notes, userId, browserToken } = req.body;
-    if (!title || !date || !userId || !browserToken) return res.status(400).json({ error: 'Título, data, ID do usuário e token do navegador são obrigatórios' });
+    
+    if (!title || !date || !userId || !browserToken) {
+      return res.status(400).json({ error: 'Título, data, ID do usuário e token do navegador são obrigatórios' });
+    }
 
     // Verificar se o usuário existe e o token é válido
     const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) return res.status(403).json({ error: 'Usuário não autorizado' });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
 
     const newDate = {
       title,
-      date,
+      date: new Date(date),
       notes,
       createdAt: new Date()
     };
 
     await User.findByIdAndUpdate(userId, { $push: { importantDates: newDate } });
-    res.status(201).json({ message: 'Data importante adicionada!' });
+    res.status(201).json({ message: 'Data importante adicionada!', date: newDate });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao adicionar data' });
+    next(err);
+  }
+});
+
+app.get('/api/dates', async (req, res, next) => {
+  try {
+    const { userId, browserToken } = req.query;
+    
+    if (!userId || !browserToken) {
+      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
+    }
+
+    // Verificar se o usuário existe e o token é válido
+    const user = await User.findOne({ _id: userId, browserToken });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
+
+    res.json(user.importantDates);
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.delete('/api/dates/:userId/:dateId', async (req, res, next) => {
+  try {
+    const { browserToken } = req.query;
+    
+    if (!browserToken) {
+      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
+    }
+
+    // Verificar se o usuário existe e o token é válido
+    const user = await User.findOne({ _id: req.params.userId, browserToken });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
+
+    // Remover a data importante
+    await User.findByIdAndUpdate(req.params.userId, {
+      $pull: { importantDates: { _id: req.params.dateId } }
+    });
+
+    res.json({ success: true, message: 'Data importante removida com sucesso' });
+  } catch (err) {
+    next(err);
   }
 });
 
 // Rotas de Histórico
-app.post('/api/history', async (req, res) => {
+app.post('/api/history', async (req, res, next) => {
   try {
     const { action, details, scope, userId, familyId, browserToken } = req.body;
-    if (!action || !userId || !browserToken) return res.status(400).json({ error: 'Ação, ID do usuário e token do navegador são obrigatórios' });
+    
+    if (!action || !userId || !browserToken) {
+      return res.status(400).json({ error: 'Ação, ID do usuário e token do navegador são obrigatórios' });
+    }
 
     // Verificar se o usuário existe e o token é válido
     const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) return res.status(403).json({ error: 'Usuário não autorizado' });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
 
     const entry = {
       action,
       details,
       timestamp: new Date(),
-      scope: scope || 'user',
-      user: userId
+      scope: scope || 'user'
     };
 
     if (scope === 'family' && familyId) {
       // Verificar se o usuário é membro da família
       const family = await Family.findOne({ _id: familyId, members: userId });
-      if (!family) return res.status(403).json({ error: 'Acesso não autorizado a esta família' });
+      if (!family) {
+        return res.status(403).json({ error: 'Acesso não autorizado a esta família' });
+      }
 
+      entry.user = userId;
       await Family.findByIdAndUpdate(familyId, { $push: { history: entry } });
     } else {
       await User.findByIdAndUpdate(userId, { $push: { history: entry } });
     }
 
-    res.status(201).json({ message: 'Entrada de histórico adicionada!' });
+    res.status(201).json({ message: 'Entrada de histórico adicionada!', entry });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao adicionar histórico' });
+    next(err);
+  }
+});
+
+app.get('/api/history', async (req, res, next) => {
+  try {
+    const { userId, browserToken } = req.query;
+    
+    if (!userId || !browserToken) {
+      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
+    }
+
+    // Verificar se o usuário existe e o token é válido
+    const user = await User.findOne({ _id: userId, browserToken });
+    if (!user) {
+      return res.status(403).json({ error: 'Usuário não autorizado' });
+    }
+
+    res.json(user.history);
+  } catch (err) {
+    next(err);
   }
 });
 
 // Rota de Sincronização de Dados Offline
-app.post('/api/sync-data', async (req, res) => {
+app.post('/api/sync-data', async (req, res, next) => {
   try {
     const { 
       userId,
@@ -410,91 +641,129 @@ app.post('/api/sync-data', async (req, res) => {
 
     // Sincronizar despesas
     for (const exp of expenses) {
-      const existing = await Expense.findById(exp._id);
-      if (!existing) {
-        const newExp = await Expense.create({
-          ...exp,
-          user: userId,
-          family: exp.family || null
-        });
-        results.expenses.push(newExp);
+      try {
+        const existing = await Expense.findById(exp._id);
+        if (!existing) {
+          const newExp = await Expense.create({
+            description: exp.description,
+            amount: exp.amount,
+            type: exp.type,
+            dueDate: new Date(exp.dueDate),
+            paymentType: exp.paymentType,
+            responsavel: exp.responsavel,
+            notes: exp.notes,
+            user: userId,
+            family: exp.family || null,
+            createdAt: exp.createdAt ? new Date(exp.createdAt) : new Date()
+          });
+          results.expenses.push(newExp);
+        }
+      } catch (expError) {
+        console.error('Erro ao sincronizar despesa:', expError);
       }
     }
 
     // Sincronizar datas importantes
     for (const date of importantDates) {
-      const existingDate = user.importantDates.find(d => d._id?.toString() === date._id);
-      if (!existingDate) {
-        await User.findByIdAndUpdate(userId, {
-          $push: {
-            importantDates: {
-              title: date.title,
-              date: date.date,
-              notes: date.notes,
-              createdAt: date.createdAt || new Date()
-            }
-          }
-        });
-        results.dates.push(date);
+      try {
+        const existingDate = user.importantDates.find(d => d._id?.toString() === date._id);
+        if (!existingDate) {
+          const newDate = {
+            title: date.title,
+            date: new Date(date.date),
+            notes: date.notes,
+            createdAt: date.createdAt ? new Date(date.createdAt) : new Date()
+          };
+
+          await User.findByIdAndUpdate(userId, {
+            $push: { importantDates: newDate }
+          });
+          results.dates.push(newDate);
+        }
+      } catch (dateError) {
+        console.error('Erro ao sincronizar data importante:', dateError);
       }
     }
 
     // Sincronizar histórico
     for (const hist of history) {
-      if (hist.scope === 'family' && hist.familyId) {
-        const family = await Family.findOne({ _id: hist.familyId, members: userId });
-        if (family) {
-          const existingHist = family.history.find(h => h._id?.toString() === hist._id);
-          if (!existingHist) {
-            await Family.findByIdAndUpdate(hist.familyId, {
-              $push: {
-                history: {
-                  action: hist.action,
-                  details: hist.details,
-                  timestamp: hist.timestamp || new Date(),
-                  user: userId
-                }
-              }
-            });
-            results.history.push(hist);
-          }
-        }
-      } else {
-        const existingHist = user.history.find(h => h._id?.toString() === hist._id);
-        if (!existingHist) {
-          await User.findByIdAndUpdate(userId, {
-            $push: {
-              history: {
+      try {
+        if (hist.scope === 'family' && hist.familyId) {
+          const family = await Family.findOne({ _id: hist.familyId, members: userId });
+          if (family) {
+            const existingHist = family.history.find(h => h._id?.toString() === hist._id);
+            if (!existingHist) {
+              const newHist = {
                 action: hist.action,
                 details: hist.details,
-                timestamp: hist.timestamp || new Date(),
-                scope: hist.scope || 'user'
-              }
+                timestamp: hist.timestamp ? new Date(hist.timestamp) : new Date(),
+                user: userId
+              };
+
+              await Family.findByIdAndUpdate(hist.familyId, {
+                $push: { history: newHist }
+              });
+              results.history.push(newHist);
             }
-          });
-          results.history.push(hist);
+          }
+        } else {
+          const existingHist = user.history.find(h => h._id?.toString() === hist._id);
+          if (!existingHist) {
+            const newHist = {
+              action: hist.action,
+              details: hist.details,
+              timestamp: hist.timestamp ? new Date(hist.timestamp) : new Date(),
+              scope: hist.scope || 'user'
+            };
+
+            await User.findByIdAndUpdate(userId, {
+              $push: { history: newHist }
+            });
+            results.history.push(newHist);
+          }
         }
+      } catch (histError) {
+        console.error('Erro ao sincronizar histórico:', histError);
       }
     }
 
     res.json({ success: true, results });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao sincronizar dados' });
+    next(err);
   }
 });
 
 // Rota raiz
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Tratamento de rotas não encontradas
+app.use((req, res) => {
+  res.status(404).json({ error: 'Rota não encontrada' });
 });
 
 // Inicia servidor
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
-// --- Keep Awake (ping a cada 40 segundos) --- //
+// Encerramento adequado do servidor
+process.on('SIGTERM', () => {
+  server.close(() => {
+    console.log('Servidor encerrado');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  server.close(() => {
+    console.log('Servidor encerrado');
+    process.exit(0);
+  });
+});
+
+// Keep Alive para Render.com
 const https = require('https');
 const URL_TO_PING = 'https://controlededespesas.onrender.com';
 
@@ -506,5 +775,6 @@ function pingSite() {
   });
 }
 
-setInterval(pingSite, 40 * 1000); // A cada 40 segundos
-pingSite(); // Envia o primeiro ping logo ao iniciar
+// Ping a cada 5 minutos para manter o servidor ativo
+setInterval(pingSite, 40 * 1000);
+pingSite(); // Primeiro ping

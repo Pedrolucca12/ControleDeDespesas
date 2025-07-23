@@ -8,118 +8,98 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
-    /* Variáveis para tema dark */
     :root {
-      --bg: #121212;
-      --card: #1e1e1e;
-      --text: #e0e0e0;
-      --accent: #4cc9f0;
-      --shadow: rgba(0,0,0,0.5);
-      --transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-      --font-primary: 'Poppins', sans-serif;
-      --font-secondary: 'Roboto', sans-serif;
-      --border-radius: 12px;
-      --text-muted: #aaa;
+      --primary: #4a6bff;
+      --primary-dark: #3a56cc;
+      --secondary: #6c757d;
+      --success: #28a745;
+      --danger: #dc3545;
       --warning: #ffc107;
-      --danger: #f72585;
-      --success: #4caf50;
+      --info: #17a2b8;
+      --light: #f8f9fa;
+      --dark: #343a40;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --bg: #f5f5f5;
+      --bg-dark: #1e1e1e;
+      --card-bg: #ffffff;
+      --card-bg-dark: #2d2d2d;
+      --border: #dee2e6;
+      --border-dark: #444;
     }
 
-    /* Reset e estilos base */
+    [data-theme="dark"] {
+      --primary: #5c7cff;
+      --primary-dark: #4a6bff;
+      --secondary: #5a6268;
+      --success: #2ecc71;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --info: #3498db;
+      --light: #343a40;
+      --dark: #f8f9fa;
+      --text: #f8f9fa;
+      --text-muted: #adb5bd;
+      --bg: #1e1e1e;
+      --bg-dark: #121212;
+      --card-bg: #2d2d2d;
+      --card-bg-dark: #1e1e1e;
+      --border: #444;
+      --border-dark: #555;
+    }
+
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
 
     body {
-      margin: 0;
-      padding: 2rem 1rem;
-      font-family: var(--font-primary);
+      font-family: 'Roboto', sans-serif;
       background-color: var(--bg);
       color: var(--text);
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .main-content {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: background-color var(--transition), color var(--transition);
-      line-height: 1.6;
-    }
-
-    /* Container principal */
-    .main-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      max-width: 900px;
+      padding: 2rem;
     }
 
     .container {
       width: 100%;
-      background: var(--card);
-      border-radius: var(--border-radius);
-      padding: 2.5rem 3rem;
-      box-shadow: 0 10px 30px var(--shadow);
-      position: relative;
-      animation: fadeInUp 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-      overflow: hidden;
-      margin-bottom: 1.5rem;
+      max-width: 1200px;
+      background-color: var(--card-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      transition: all 0.3s;
     }
 
-    .container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 8px;
-      background: linear-gradient(90deg, var(--accent) 0%, #7209b7 100%);
-      animation: rainbowBorder 8s linear infinite;
+    h1, h2, h3 {
+      font-family: 'Poppins', sans-serif;
+      margin-bottom: 1.5rem;
+      color: var(--primary);
     }
 
     h1 {
-      font-weight: 700;
-      font-size: 2.5rem;
+      font-size: 2rem;
       text-align: center;
-      margin: 1.5rem 0 2.5rem;
-      color: var(--accent);
-      letter-spacing: 1px;
-      user-select: none;
-      position: relative;
-      animation: fadeIn 0.8s ease both;
-      font-family: var(--font-secondary);
-    }
-
-    h1::after {
-      content: '';
-      display: block;
-      width: 80px;
-      height: 4px;
-      background: var(--accent);
-      margin: 1rem auto 0;
-      border-radius: 2px;
-      animation: scaleIn 0.8s ease both;
     }
 
     h2 {
-      font-weight: 600;
-      font-size: 1.8rem;
-      margin: 1.5rem 0 1rem;
-      color: var(--accent);
-      font-family: var(--font-secondary);
-      position: relative;
-      padding-bottom: 0.5rem;
+      font-size: 1.5rem;
+      margin-top: 1.5rem;
     }
 
-    h2::after {
-      content: '';
-      display: block;
-      width: 50px;
-      height: 3px;
-      background: var(--accent);
-      margin-top: 0.5rem;
-      border-radius: 2px;
+    h3 {
+      font-size: 1.25rem;
+      margin-top: 1rem;
     }
 
     /* Tela login */
@@ -127,29 +107,31 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      animation: fadeIn 1s ease both;
+      gap: 1rem;
+      padding: 2rem;
+      transition: all 0.3s;
     }
 
     #login-screen label {
       cursor: pointer;
-      text-align: center;
-      margin-bottom: 1rem;
-      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    #login-screen img {
-      width: 140px;
-      height: 140px;
+    #profile-pic {
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       object-fit: cover;
-      box-shadow: 0 8px 25px var(--shadow);
-      transition: all 0.4s ease;
-      border: 4px solid var(--accent);
+      border: 3px solid var(--primary);
+      transition: all 0.3s;
     }
 
-    #login-screen img:hover {
-      transform: scale(1.05) rotate(5deg);
-      box-shadow: 0 12px 30px var(--shadow);
+    #profile-pic:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     }
 
     #photo-input {
@@ -157,96 +139,60 @@
     }
 
     #username-input {
-      margin-top: 1.5rem;
-      width: 250px;
-      font-size: 1.3rem;
-      font-weight: 500;
-      border: none;
-      border-bottom: 3px solid var(--accent);
-      background: transparent;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 1rem;
+      width: 100%;
+      max-width: 300px;
+      background-color: var(--card-bg);
       color: var(--text);
-      text-align: center;
-      padding: 0.5rem 0;
-      transition: all 0.3s ease;
-      font-family: var(--font-secondary);
+      transition: all 0.3s;
     }
 
     #username-input:focus {
       outline: none;
-      border-color: var(--accent);
-      transform: scale(1.02);
-    }
-
-    #username-input::placeholder {
-      color: var(--text-muted);
-      opacity: 0.7;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.25);
     }
 
     #login-btn {
-      margin-top: 2rem;
-      padding: 0.9rem 2.5rem;
-      font-size: 1.2rem;
-      font-weight: 600;
-      border-radius: 50px;
-      border: none;
-      background: var(--accent);
+      padding: 0.75rem 2rem;
+      background-color: var(--primary);
       color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 500;
       cursor: pointer;
-      box-shadow: 0 8px 20px rgba(76, 201, 240, 0.3);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      position: relative;
-      overflow: hidden;
-      font-family: var(--font-secondary);
+      transition: all 0.3s;
+    }
+
+    #login-btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
     }
 
     #login-btn:disabled {
-      background: #555;
+      background-color: var(--secondary);
       cursor: not-allowed;
-      box-shadow: none;
-      transform: none !important;
-    }
-
-    #login-btn:not(:disabled):hover {
-      background: var(--accent);
-      box-shadow: 0 12px 25px rgba(76, 201, 240, 0.4);
-      transform: translateY(-3px);
-    }
-
-    #login-btn:not(:disabled):active {
-      transform: translateY(1px);
-    }
-
-    #login-btn::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(45deg, transparent 25%, rgba(255,255,255,0.2) 50%, transparent 75%);
-      background-size: 400% 400%;
-      opacity: 0;
-      transition: all 0.6s ease;
-    }
-
-    #login-btn:hover::after {
-      opacity: 1;
-      animation: shine 1.5s ease infinite;
+      transform: none;
     }
 
     /* App principal */
     #app {
       display: none;
-      width: 100%;
-      animation: fadeIn 0.8s ease both;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
     }
 
-    /* Formulário de despesas */
-    form {
+    /* Formulário */
+    #expense-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1.2rem 1.8rem;
-      margin-bottom: 2.5rem;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
     }
 
     .form-group {
@@ -255,269 +201,181 @@
       gap: 0.5rem;
     }
 
-    label {
-      font-size: 0.95rem;
+    .form-group label {
       font-weight: 500;
-      color: var(--accent);
-      font-family: var(--font-secondary);
-    }
-
-    input, select, textarea {
-      padding: 0.8rem 1rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 2px solid #444;
-      background: var(--card);
       color: var(--text);
-      transition: all 0.3s ease;
-      width: 100%;
-      font-family: var(--font-secondary);
     }
 
-    input:focus, select:focus, textarea:focus {
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 1rem;
+      background-color: var(--card-bg);
+      color: var(--text);
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(76, 201, 240, 0.2);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.25);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    #expense-form button {
+      grid-column: span 2;
+      padding: 1rem;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.3s;
+    }
+
+    #expense-form button:hover {
+      background-color: var(--primary-dark);
       transform: translateY(-2px);
     }
 
-    textarea {
-      grid-column: span 2;
-      min-height: 80px;
-      resize: vertical;
-    }
-
-    button[type="submit"] {
-      grid-column: span 2;
-      background: var(--accent);
-      color: white;
-      border: none;
-      font-weight: 600;
-      font-size: 1.2rem;
-      cursor: pointer;
-      border-radius: 50px;
-      padding: 1rem 0;
-      box-shadow: 0 8px 20px rgba(76, 201, 240, 0.3);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      margin-top: 0.5rem;
-      font-family: var(--font-secondary);
-    }
-
-    button[type="submit"]:hover {
-      background: var(--accent);
-      box-shadow: 0 12px 25px rgba(76, 201, 240, 0.4);
-      transform: translateY(-3px);
-    }
-
-    button[type="submit"]:active {
-      transform: translateY(1px);
-    }
-
-    /* Tabela de despesas */
+    /* Tabela */
     .table-container {
       width: 100%;
       overflow-x: auto;
-      margin-bottom: 1.5rem;
-      border-radius: var(--border-radius);
-      box-shadow: 0 10px 25px var(--shadow);
-      animation: fadeInUp 0.7s ease both;
+      margin-bottom: 2rem;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: var(--card);
-      min-width: 600px;
-    }
-
-    thead {
-      background: var(--accent);
-      color: white;
-      font-weight: 600;
+      margin-bottom: 1rem;
     }
 
     th, td {
-      padding: 1.2rem 1.5rem;
+      padding: 1rem;
       text-align: left;
-      border-bottom: 1px solid #444;
-      vertical-align: middle;
-      transition: all 0.3s ease;
+      border-bottom: 1px solid var(--border);
     }
 
     th {
-      font-family: var(--font-secondary);
-      letter-spacing: 0.5px;
+      background-color: var(--primary);
+      color: white;
+      font-weight: 500;
     }
 
-    tbody tr {
-      transition: all 0.3s ease;
+    tr:hover {
+      background-color: rgba(0, 0, 0, 0.05);
     }
 
-    tbody tr:hover {
-      background: rgba(76, 201, 240, 0.1);
-      transform: translateX(5px);
-    }
-
-    tbody tr[title] {
-      background: rgba(255, 193, 7, 0.15) !important;
-      position: relative;
-    }
-
-    tbody tr[title]::before {
-      content: '⚠️';
-      position: absolute;
-      left: 5px;
-      top: 50%;
-      transform: translateY(-50%);
+    [data-theme="dark"] tr:hover {
+      background-color: rgba(255, 255, 255, 0.05);
     }
 
     .btn-delete {
-      background: #f72585;
-      border: none;
+      background-color: var(--danger);
       color: white;
+      border: none;
+      border-radius: 5px;
       padding: 0.5rem 1rem;
-      border-radius: 6px;
       cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.3rem;
-      font-family: var(--font-secondary);
+      gap: 0.5rem;
+      transition: all 0.3s;
     }
 
     .btn-delete:hover {
-      background: #b5179e;
-      transform: scale(1.05);
+      background-color: #c82333;
+      transform: translateY(-1px);
     }
 
-    .btn-delete:active {
-      transform: scale(0.95);
-    }
-
-    /* Notificações */
-    #notification {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      background: var(--accent);
-      color: white;
-      padding: 1.2rem 2rem;
-      border-radius: var(--border-radius);
-      box-shadow: 0 10px 25px var(--shadow);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(20px);
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      user-select: none;
-      font-weight: 600;
-      max-width: 350px;
-      z-index: 1000;
-      font-family: var(--font-secondary);
-    }
-
-    #notification.show {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    #notification.warning {
-      background: var(--warning);
-      color: #333;
-    }
-
-    #notification.danger {
-      background: var(--danger);
-    }
-
-    #notification.success {
-      background: var(--success);
-    }
-
-    /* Seção de datas importantes */
-    #important-dates-section {
-      background: var(--card);
-      border-radius: var(--border-radius);
-      padding: 2rem;
-      box-shadow: 0 10px 30px var(--shadow);
-      margin-top: 1.5rem;
-      display: none;
-    }
-
-    #important-dates-section[aria-hidden="false"] {
-      display: block;
-    }
-
-    .date-card {
-      background: rgba(76, 201, 240, 0.1);
-      border-radius: var(--border-radius);
-      padding: 1.5rem;
+    /* Seções recolhíveis */
+    .section-toggle {
+      width: 100%;
+      padding: 1rem;
+      background-color: var(--card-bg-dark);
+      color: var(--text);
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 1rem;
-      border-left: 4px solid var(--accent);
-      transition: all 0.3s ease;
+      transition: all 0.3s;
     }
 
-    .date-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px var(--shadow);
+    .section-toggle:hover {
+      background-color: var(--primary);
+      color: white;
     }
 
-    .date-card h3 {
-      color: var(--accent);
-      margin-bottom: 0.5rem;
-      font-family: var(--font-secondary);
-    }
-
-    .date-card p {
-      margin-bottom: 0.5rem;
-    }
-
-    .date-card .date {
-      font-weight: 600;
-      color: var(--accent);
+    #important-dates-section,
+    #history-section {
+      display: none;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background-color: var(--card-bg-dark);
+      border-radius: 5px;
     }
 
     .date-form {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
       margin-top: 1.5rem;
     }
 
-    /* Seção de Histórico */
-    #history-section {
-      background: var(--card);
-      border-radius: var(--border-radius);
-      padding: 2rem;
-      box-shadow: 0 10px 30px var(--shadow);
-      margin-top: 1.5rem;
-      display: none;
+    .date-card {
+      background-color: var(--card-bg);
+      border-radius: 5px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-    #history-section[aria-hidden="false"] {
-      display: block;
+    .date-card .date {
+      color: var(--primary);
+      font-weight: 500;
     }
 
     .history-item {
+      background-color: var(--card-bg);
+      border-radius: 5px;
       padding: 1rem;
-      border-bottom: 1px solid #444;
-      transition: all 0.3s ease;
-    }
-
-    .history-item:hover {
-      background: rgba(76, 201, 240, 0.1);
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .history-item .date {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       color: var(--text-muted);
+      margin-bottom: 0.5rem;
     }
 
     .history-item .action {
       font-weight: 500;
-      margin: 0.3rem 0;
+      margin-bottom: 0.25rem;
     }
 
     .history-item .details {
@@ -525,188 +383,104 @@
       color: var(--text-muted);
     }
 
-    /* Botões de seção */
-    .section-toggle {
-      width: 100%;
-      background: var(--accent);
-      border: none;
-      border-radius: var(--border-radius);
+    /* Notificação */
+    #notification {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 1rem 2rem;
+      background-color: var(--primary);
       color: white;
-      padding: 1rem 1.5rem;
-      cursor: pointer;
-      font-weight: 600;
-      box-shadow: 0 5px 15px var(--shadow);
-      transition: all 0.3s ease;
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.8rem;
-      font-family: var(--font-secondary);
-      margin-top: 1rem;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 1000;
     }
 
-    .section-toggle:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px var(--shadow);
+    #notification.show {
+      opacity: 1;
     }
 
-    .section-toggle:active {
-      transform: translateY(1px);
+    #notification.success {
+      background-color: var(--success);
+    }
+
+    #notification.warning {
+      background-color: var(--warning);
+      color: var(--dark);
+    }
+
+    #notification.danger {
+      background-color: var(--danger);
     }
 
     /* Responsividade */
     @media (max-width: 768px) {
+      #expense-form {
+        grid-template-columns: 1fr;
+      }
+
+      #expense-form button {
+        grid-column: span 1;
+      }
+
+      .date-form {
+        grid-template-columns: 1fr;
+      }
+
+      .date-form button {
+        grid-column: span 1;
+      }
+
+      th, td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+      }
+
       .container {
-        padding: 2rem 1.5rem;
-        max-width: 100%;
-      }
-
-      h1 {
-        font-size: 2rem;
-      }
-
-      form {
-        grid-template-columns: 1fr !important;
-      }
-
-      textarea {
-        grid-column: 1 / -1 !important;
-      }
-
-      .table-container {
-        border-radius: 0;
-        box-shadow: none;
-        margin-left: -1.5rem;
-        margin-right: -1.5rem;
-        width: calc(100% + 3rem);
-      }
-
-      table {
-        min-width: 100%;
-      }
-
-      thead tr {
-        display: none;
-      }
-
-      tbody tr {
-        margin-bottom: 1.5rem;
-        border-radius: var(--border-radius);
-        background: var(--card);
-        box-shadow: 0 5px 15px var(--shadow);
         padding: 1rem;
-        position: relative;
-        display: block;
-      }
-
-      tbody td {
-        padding-left: 50%;
-        position: relative;
-        text-align: right;
-        font-size: 0.95rem;
-        border-bottom: none;
-        padding: 0.8rem 1rem 0.8rem 50%;
-        display: block;
-      }
-
-      tbody td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 1rem;
-        width: 45%;
-        font-weight: 600;
-        text-align: left;
-        color: var(--accent);
-      }
-
-      .btn-delete {
-        width: 100%;
-        padding: 0.8rem;
-        font-size: 1.1rem;
-      }
-
-      #important-dates-section, #history-section {
-        padding: 1.5rem;
       }
     }
 
     @media (max-width: 480px) {
-      .container {
-        padding: 1.5rem 1rem;
+      table {
+        display: block;
       }
 
-      #login-screen img {
-        width: 120px;
-        height: 120px;
+      thead {
+        display: none;
       }
 
-      #username-input {
-        width: 200px;
-        font-size: 1.1rem;
+      tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 5px;
       }
 
-      #login-btn {
-        padding: 0.8rem 2rem;
-        font-size: 1.1rem;
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--border);
       }
 
-      tbody td {
-        padding-left: 40%;
+      td:last-child {
+        border-bottom: none;
       }
 
-      tbody td::before {
-        width: 35%;
+      td::before {
+        content: attr(data-label);
+        font-weight: 500;
+        margin-right: 1rem;
       }
 
-      #important-dates-section, #history-section {
-        padding: 1rem;
+      .btn-delete span:last-child {
+        display: none;
       }
-    }
-
-    /* Animações */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes scaleIn {
-      from { transform: scaleX(0); }
-      to { transform: scaleX(1); }
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes shine {
-      0% { background-position: -100% -100%; }
-      100% { background-position: 200% 200%; }
-    }
-
-    @keyframes rainbowBorder {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
-      100% { transform: translateY(0px); }
     }
   </style>
 </head>
@@ -978,7 +752,8 @@
           photoPath: photoBase64,
           browserToken: browserToken,
           lastLogin: new Date().toISOString(),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          synced: false
         };
         
         // Salvar no localStorage
@@ -1001,16 +776,27 @@
             if (!response.ok) throw new Error('Erro ao criar usuário no servidor');
             
             const serverUser = await response.json();
-            return serverUser.user;
+            newUser._id = serverUser.user._id;
+            newUser.synced = true;
+            
+            // Atualiza localStorage com o ID do servidor
+            const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+            const userIndex = updatedLocalData.users.findIndex(u => u._id === userId);
+            if (userIndex !== -1) {
+              updatedLocalData.users[userIndex] = newUser;
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+            }
+            
+            return newUser;
           } catch (serverError) {
             console.error('Erro ao criar usuário no servidor:', serverError);
             // Continua com o usuário local
+            return newUser;
           }
         } else {
           syncPending = true;
+          return newUser;
         }
-        
-        return newUser;
       } catch (error) {
         console.error('Erro ao criar usuário:', error);
         throw error;
@@ -1043,9 +829,9 @@
               const existingUserIndex = localData.users.findIndex(u => u.username === username);
               
               if (existingUserIndex !== -1) {
-                localData.users[existingUserIndex] = { ...localData.users[existingUserIndex], ...user };
+                localData.users[existingUserIndex] = { ...localData.users[existingUserIndex], ...user, synced: true };
               } else {
-                localData.users.push(user);
+                localData.users.push({ ...user, synced: true });
               }
               
               localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
@@ -1137,13 +923,13 @@
         // Atualiza no servidor se estiver online
         if (isOnline) {
           try {
-            await fetch(`${API_BASE_URL}/users/${encodeURIComponent(username)}`, {
+            await fetch(`${API_BASE_URL}/users/${user._id}/last-login`, {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                lastLogin: new Date().toISOString()
+                browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
               })
             });
           } catch (serverError) {
@@ -1246,7 +1032,8 @@
           notes: notes,
           userId: currentUserId,
           responsavel: responsavel,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          synced: false
         };
         
         // Salvar no localStorage
@@ -1270,15 +1057,24 @@
                 paymentType: payType,
                 notes: notes,
                 userId: currentUserId,
-                responsavel: responsavel
+                responsavel: responsavel,
+                browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
               })
             });
             
             if (!response.ok) throw new Error('Erro ao salvar despesa no servidor');
             
             const serverExpense = await response.json();
-            // Atualiza o ID com o do servidor
             newExpense._id = serverExpense.expense._id;
+            newExpense.synced = true;
+            
+            // Atualiza localStorage
+            const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+            const expenseIndex = updatedLocalData.expenses.findIndex(e => e._id === expenseId);
+            if (expenseIndex !== -1) {
+              updatedLocalData.expenses[expenseIndex] = newExpense;
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+            }
           } catch (serverError) {
             console.error('Erro ao salvar despesa no servidor:', serverError);
             syncPending = true;
@@ -1316,7 +1112,8 @@
         // Tenta buscar do servidor se estiver online
         if (isOnline) {
           try {
-            const response = await fetch(`${API_BASE_URL}/expenses/${currentUserId}`);
+            const browserToken = localStorage.getItem(AUTH_TOKEN_KEY);
+            const response = await fetch(`${API_BASE_URL}/expenses/${currentUserId}?browserToken=${browserToken}`);
             if (response.ok) {
               const serverExpenses = await response.json();
               expenses = serverExpenses;
@@ -1324,7 +1121,7 @@
               // Atualiza localStorage com dados do servidor
               const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
               localData.expenses = localData.expenses.filter(exp => exp.userId !== currentUserId);
-              localData.expenses.push(...serverExpenses);
+              localData.expenses.push(...serverExpenses.map(e => ({ ...e, synced: true })));
               localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
             } else {
               throw new Error('Erro ao buscar despesas do servidor');
@@ -1425,7 +1222,14 @@
           if (isOnline) {
             try {
               const response = await fetch(`${API_BASE_URL}/expenses/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  userId: currentUserId,
+                  browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
+                })
               });
               
               if (!response.ok) throw new Error('Erro ao excluir despesa no servidor');
@@ -1546,14 +1350,15 @@
         // Tenta buscar do servidor se estiver online
         if (isOnline) {
           try {
-            const response = await fetch(`${API_BASE_URL}/dates?userId=${currentUserId}`);
+            const browserToken = localStorage.getItem(AUTH_TOKEN_KEY);
+            const response = await fetch(`${API_BASE_URL}/dates?userId=${currentUserId}&browserToken=${browserToken}`);
             if (response.ok) {
               dates = await response.json();
               
               // Atualiza localStorage com dados do servidor
               const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
               localData.importantDates = localData.importantDates.filter(d => d.userId !== currentUserId);
-              localData.importantDates.push(...dates);
+              localData.importantDates.push(...dates.map(d => ({ ...d, synced: true })));
               localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
             }
           } catch (serverError) {
@@ -1621,7 +1426,8 @@
           date: date,
           notes: notes,
           userId: currentUserId,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          synced: false
         };
         
         // Salvar no localStorage
@@ -1641,15 +1447,24 @@
                 title: title,
                 date: date,
                 notes: notes,
-                userId: currentUserId
+                userId: currentUserId,
+                browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
               })
             });
             
             if (!response.ok) throw new Error('Erro ao salvar data no servidor');
             
             const serverDate = await response.json();
-            // Atualiza o ID com o do servidor
             newDate._id = serverDate._id;
+            newDate.synced = true;
+            
+            // Atualiza localStorage
+            const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+            const dateIndex = updatedLocalData.importantDates.findIndex(d => d._id === dateId);
+            if (dateIndex !== -1) {
+              updatedLocalData.importantDates[dateIndex] = newDate;
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+            }
           } catch (serverError) {
             console.error('Erro ao salvar data no servidor:', serverError);
             syncPending = true;
@@ -1688,7 +1503,14 @@
           if (isOnline) {
             try {
               const response = await fetch(`${API_BASE_URL}/dates/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  userId: currentUserId,
+                  browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
+                })
               });
               
               if (!response.ok) throw new Error('Erro ao remover data no servidor');
@@ -1746,14 +1568,15 @@
         // Tenta buscar do servidor se estiver online
         if (isOnline) {
           try {
-            const response = await fetch(`${API_BASE_URL}/history?userId=${currentUserId}`);
+            const browserToken = localStorage.getItem(AUTH_TOKEN_KEY);
+            const response = await fetch(`${API_BASE_URL}/history?userId=${currentUserId}&browserToken=${browserToken}`);
             if (response.ok) {
               history = await response.json();
               
               // Atualiza localStorage com dados do servidor
               const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
               localData.history = localData.history.filter(h => h.userId !== currentUserId);
-              localData.history.push(...history);
+              localData.history.push(...history.map(h => ({ ...h, synced: true })));
               localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
             }
           } catch (serverError) {
@@ -1805,7 +1628,8 @@
           action: action,
           details: details,
           userId: currentUserId,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          synced: false
         };
         
         // Salvar no localStorage
@@ -1824,11 +1648,24 @@
               body: JSON.stringify({
                 action: action,
                 details: details,
-                userId: currentUserId
+                userId: currentUserId,
+                browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
               })
             });
             
             if (!response.ok) throw new Error('Erro ao salvar histórico no servidor');
+            
+            const serverHistory = await response.json();
+            newHistory._id = serverHistory._id;
+            newHistory.synced = true;
+            
+            // Atualiza localStorage
+            const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+            const historyIndex = updatedLocalData.history.findIndex(h => h._id === historyId);
+            if (historyIndex !== -1) {
+              updatedLocalData.history[historyIndex] = newHistory;
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+            }
           } catch (serverError) {
             console.error('Erro ao salvar histórico no servidor:', serverError);
             syncPending = true;
@@ -1859,7 +1696,7 @@
         
         // Sincronizar usuários
         for (const user of localData.users) {
-          if (!user.synced) {
+          if (!user.synced && user._id === currentUserId) {
             try {
               const formData = new FormData();
               formData.append('username', user.username);
@@ -1879,6 +1716,17 @@
                 const serverUser = await response.json();
                 user._id = serverUser.user._id;
                 user.synced = true;
+                
+                // Atualiza o currentUserId com o ID do servidor
+                currentUserId = serverUser.user._id;
+                
+                // Atualiza localStorage
+                const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+                const userIndex = updatedLocalData.users.findIndex(u => u.username === user.username);
+                if (userIndex !== -1) {
+                  updatedLocalData.users[userIndex] = user;
+                  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+                }
               }
             } catch (error) {
               console.error('Erro ao sincronizar usuário:', error);
@@ -1888,7 +1736,7 @@
         
         // Sincronizar despesas
         for (const expense of localData.expenses) {
-          if (!expense.synced) {
+          if (!expense.synced && expense.userId === currentUserId) {
             try {
               const response = await fetch(`${API_BASE_URL}/expenses`, {
                 method: 'POST',
@@ -1903,7 +1751,8 @@
                   paymentType: expense.paymentType,
                   notes: expense.notes,
                   userId: currentUserId,
-                  responsavel: expense.responsavel
+                  responsavel: expense.responsavel,
+                  browserToken: browserToken
                 })
               });
               
@@ -1911,6 +1760,14 @@
                 const serverExpense = await response.json();
                 expense._id = serverExpense.expense._id;
                 expense.synced = true;
+                
+                // Atualiza localStorage
+                const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+                const expenseIndex = updatedLocalData.expenses.findIndex(e => e._id === expense._id);
+                if (expenseIndex !== -1) {
+                  updatedLocalData.expenses[expenseIndex] = expense;
+                  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+                }
               }
             } catch (error) {
               console.error('Erro ao sincronizar despesa:', error);
@@ -1920,7 +1777,7 @@
         
         // Sincronizar datas importantes
         for (const date of localData.importantDates) {
-          if (!date.synced) {
+          if (!date.synced && date.userId === currentUserId) {
             try {
               const response = await fetch(`${API_BASE_URL}/dates`, {
                 method: 'POST',
@@ -1931,7 +1788,8 @@
                   title: date.title,
                   date: date.date,
                   notes: date.notes,
-                  userId: currentUserId
+                  userId: currentUserId,
+                  browserToken: browserToken
                 })
               });
               
@@ -1939,6 +1797,14 @@
                 const serverDate = await response.json();
                 date._id = serverDate._id;
                 date.synced = true;
+                
+                // Atualiza localStorage
+                const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+                const dateIndex = updatedLocalData.importantDates.findIndex(d => d._id === date._id);
+                if (dateIndex !== -1) {
+                  updatedLocalData.importantDates[dateIndex] = date;
+                  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+                }
               }
             } catch (error) {
               console.error('Erro ao sincronizar data importante:', error);
@@ -1948,7 +1814,7 @@
         
         // Sincronizar histórico
         for (const historyItem of localData.history) {
-          if (!historyItem.synced) {
+          if (!historyItem.synced && historyItem.userId === currentUserId) {
             try {
               const response = await fetch(`${API_BASE_URL}/history`, {
                 method: 'POST',
@@ -1958,7 +1824,8 @@
                 body: JSON.stringify({
                   action: historyItem.action,
                   details: historyItem.details,
-                  userId: currentUserId
+                  userId: currentUserId,
+                  browserToken: browserToken
                 })
               });
               
@@ -1966,15 +1833,20 @@
                 const serverHistory = await response.json();
                 historyItem._id = serverHistory._id;
                 historyItem.synced = true;
+                
+                // Atualiza localStorage
+                const updatedLocalData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+                const historyIndex = updatedLocalData.history.findIndex(h => h._id === historyItem._id);
+                if (historyIndex !== -1) {
+                  updatedLocalData.history[historyIndex] = historyItem;
+                  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocalData));
+                }
               }
             } catch (error) {
               console.error('Erro ao sincronizar histórico:', error);
             }
           }
         }
-        
-        // Atualizar localStorage com flags de sincronização
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
         
         // Recarregar dados para garantir consistência
         loadExpenses();
