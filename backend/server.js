@@ -439,43 +439,6 @@ app.get('/api/expenses/:userId', async (req, res, next) => {
   }
 });
 
-app.delete('/api/expenses/:id', async (req, res, next) => {
-  try {
-    const { userId, browserToken } = req.body;
-    
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
-
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    // Verificar se a despesa pertence ao usuário
-    const expense = await Expense.findOne({ _id: req.params.id, user: userId });
-    if (!expense) {
-      return res.status(404).json({ error: 'Despesa não encontrada ou não pertence ao usuário' });
-    }
-
-    // Remover a despesa
-    await Expense.deleteOne({ _id: req.params.id });
-
-    // Remover referência da despesa no usuário
-    await User.findByIdAndUpdate(userId, { $pull: { expenses: req.params.id } });
-
-    // Se for despesa familiar, remover referência na família também
-    if (expense.family) {
-      await Family.findByIdAndUpdate(expense.family, { $pull: { expenses: req.params.id } });
-    }
-
-    res.json({ success: true, message: 'Despesa removida com sucesso' });
-  } catch (err) {
-    next(err);
-  }
-});
-
 // Rotas de Datas Importantes
 app.post('/api/dates', async (req, res, next) => {
   try {
@@ -500,51 +463,6 @@ app.post('/api/dates', async (req, res, next) => {
 
     await User.findByIdAndUpdate(userId, { $push: { importantDates: newDate } });
     res.status(201).json({ message: 'Data importante adicionada!', date: newDate });
-  } catch (err) {
-    next(err);
-  }
-});
-
-app.get('/api/dates', async (req, res, next) => {
-  try {
-    const { userId, browserToken } = req.query;
-    
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
-
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    res.json(user.importantDates);
-  } catch (err) {
-    next(err);
-  }
-});
-
-app.delete('/api/dates/:userId/:dateId', async (req, res, next) => {
-  try {
-    const { browserToken } = req.query;
-    
-    if (!browserToken) {
-      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
-    }
-
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: req.params.userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    // Remover a data importante
-    await User.findByIdAndUpdate(req.params.userId, {
-      $pull: { importantDates: { _id: req.params.dateId } }
-    });
-
-    res.json({ success: true, message: 'Data importante removida com sucesso' });
   } catch (err) {
     next(err);
   }
@@ -586,26 +504,6 @@ app.post('/api/history', async (req, res, next) => {
     }
 
     res.status(201).json({ message: 'Entrada de histórico adicionada!', entry });
-  } catch (err) {
-    next(err);
-  }
-});
-
-app.get('/api/history', async (req, res, next) => {
-  try {
-    const { userId, browserToken } = req.query;
-    
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
-
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    res.json(user.history);
   } catch (err) {
     next(err);
   }
