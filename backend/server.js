@@ -674,5 +674,5 @@ function pingSite() {
 }
 
 // Ping a cada 5 minutos para manter o servidor ativo
-setInterval(pingSite, 40 * 1000);
+setInterval(pingSite, 40* 1000);
 pingSite(); // Primeiro ping
