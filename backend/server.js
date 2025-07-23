@@ -1,32 +1,31 @@
+// server.js COMPLETO e corrigido
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração para armazenar fotos enviadas
+// Pastas
 const uploadFolder = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadFolder)) {
-  fs.mkdirSync(uploadFolder);
-}
+if (!fs.existsSync(uploadFolder)) fs.mkdirSync(uploadFolder);
 
+// Multer config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadFolder),
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
-
 const upload = multer({ storage });
 
-// Conexão com MongoDB
+// MongoDB
 const uri = "mongodb+srv://BancoDeDadosOWNER:BancoCONTROLEAdm165qwe@cluster0.chktvcs.mongodb.net/controledecontas?retryWrites=true&w=majority&appName=Cluster0";
-
 mongoose.connect(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -38,131 +37,37 @@ mongoose.connect(uri, {
     process.exit(1);
   });
 
-// Schemas atualizados para corresponder ao frontend
+// Schemas
 const userSchema = new mongoose.Schema({
-  username: { 
-    type: String, 
-    required: true, 
-    unique: true,
-    trim: true,
-    minlength: 2,
-    maxlength: 20
-  },
-  photoPath: { 
-    type: String, 
-    required: true 
-  },
-  browserToken: { 
-    type: String, 
-    required: true, 
-    unique: true 
-  },
-  lastLogin: { 
-    type: Date, 
-    default: Date.now 
-  },
-  expenses: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Expense' 
-  }],
+  username: { type: String, required: true, unique: true, trim: true, minlength: 2, maxlength: 20 },
+  photoPath: { type: String, required: true },
+  browserToken: { type: String, required: true, unique: true },
+  lastLogin: { type: Date, default: Date.now },
+  expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Expense' }],
   importantDates: [{
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 50
-    },
-    date: {
-      type: Date,
-      required: true
-    },
-    notes: {
-      type: String,
-      trim: true,
-      maxlength: 200
-    },
-    createdAt: { 
-      type: Date, 
-      default: Date.now 
-    }
+    title: String,
+    date: Date,
+    notes: String,
+    createdAt: { type: Date, default: Date.now }
   }],
   history: [{
-    action: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 100
-    },
-    details: {
-      type: String,
-      trim: true,
-      maxlength: 200
-    },
-    timestamp: { 
-      type: Date, 
-      default: Date.now 
-    },
-    scope: { 
-      type: String, 
-      enum: ['user', 'family'], 
-      default: 'user' 
-    }
+    action: String,
+    details: String,
+    timestamp: { type: Date, default: Date.now },
+    scope: { type: String, enum: ['user', 'family'], default: 'user' }
   }]
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 const expenseSchema = new mongoose.Schema({
-  description: { 
-    type: String, 
-    required: true,
-    trim: true,
-    maxlength: 100
-  },
-  amount: { 
-    type: Number, 
-    required: true,
-    min: 0
-  },
-  type: { 
-    type: String, 
-    enum: ['despesa', 'receita'], 
-    required: true 
-  },
-  dueDate: { 
-    type: Date, 
-    required: true 
-  },
-  paymentType: { 
-    type: String, 
-    required: true,
-    enum: ['dinheiro', 'cartão', 'boleto', 'transferência', 'outro']
-  },
-  responsavel: { 
-    type: String, 
-    required: true,
-    trim: true,
-    maxlength: 50
-  },
-  notes: {
-    type: String,
-    trim: true,
-    maxlength: 200
-  },
-  user: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
-  }
-}, {
-  timestamps: true
-});
-
-// Índices para melhor performance
-userSchema.index({ username: 1 });
-userSchema.index({ browserToken: 1 });
-expenseSchema.index({ user: 1 });
-expenseSchema.index({ dueDate: 1 });
+  description: String,
+  amount: Number,
+  type: { type: String, enum: ['despesa', 'receita'] },
+  dueDate: Date,
+  paymentType: { type: String, enum: ['dinheiro', 'cartão', 'boleto', 'transferência', 'outro'] },
+  responsavel: String,
+  notes: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 const Expense = mongoose.model('Expense', expenseSchema);
@@ -171,525 +76,186 @@ const Expense = mongoose.model('Expense', expenseSchema);
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadFolder));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
-// Middleware de tratamento de erros
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Erro interno do servidor' });
-});
-
-// Rotas de Usuário
-app.post('/api/users', upload.single('photo'), async (req, res, next) => {
+// Rotas
+app.post('/api/users', upload.single('photo'), async (req, res) => {
   try {
     const { username, browserToken } = req.body;
-    
-    if (!username || !browserToken) {
-      return res.status(400).json({ error: 'Nome de usuário e token do navegador são obrigatórios' });
-    }
+    if (!username || !browserToken || !req.file) return res.status(400).json({ error: 'Campos obrigatórios' });
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'Foto obrigatória' });
-    }
+    const userExists = await User.findOne({ username });
+    if (userExists) return res.status(400).json({ error: 'Usuário já existe' });
 
-    // Verificar se username já existe
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Nome de usuário já existe' });
-    }
+    const tokenExists = await User.findOne({ browserToken });
+    if (tokenExists) return res.status(400).json({ error: 'Dispositivo já possui uma conta' });
 
-    // Verificar se browserToken já está em uso
-    const existingTokenUser = await User.findOne({ browserToken });
-    if (existingTokenUser) {
-      return res.status(400).json({ error: 'Dispositivo já possui uma conta' });
-    }
-
-    const user = new User({
+    const user = await new User({
       username,
-      photoPath: '/uploads/' + req.file.filename,
       browserToken,
-      expenses: [],
-      importantDates: [],
-      history: []
-    });
+      photoPath: '/uploads/' + req.file.filename
+    }).save();
 
-    await user.save();
-    
-    // Remover campos sensíveis da resposta
-    const userResponse = user.toObject();
-    delete userResponse.browserToken;
-    
-    res.status(201).json({ message: 'Usuário criado!', user: userResponse });
+    const userData = user.toObject();
+    delete userData.browserToken;
+    res.status(201).json({ message: 'Usuário criado!', user: userData });
   } catch (err) {
-    next(err);
+    res.status(500).json({ error: 'Erro interno ao criar usuário' });
   }
 });
 
-app.get('/api/users/:username', async (req, res, next) => {
-  try {
-    const { browserToken } = req.query;
-    
-    if (!browserToken) {
-      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
-    }
+app.get('/api/users/:username', async (req, res) => {
+  const { browserToken } = req.query;
+  if (!browserToken) return res.status(400).json({ error: 'Token obrigatório' });
 
-    const user = await User.findOne({ 
-      username: req.params.username,
-      browserToken
-    }).select('-browserToken -__v');
+  const user = await User.findOne({ username: req.params.username, browserToken }).select('-browserToken -__v');
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado ou token inválido' });
 
-    if (!user) {
-      return res.status(404).json({ error: 'Usuário não encontrado ou acesso não autorizado' });
-    }
-
-    res.json(user);
-  } catch (err) {
-    next(err);
-  }
+  res.json(user);
 });
 
-app.patch('/api/users/:id/last-login', async (req, res, next) => {
-  try {
-    const { browserToken } = req.body;
-    
-    if (!browserToken) {
-      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
-    }
+app.patch('/api/users/:id/last-login', async (req, res) => {
+  const { browserToken } = req.body;
+  const updated = await User.findOneAndUpdate({ _id: req.params.id, browserToken }, { lastLogin: new Date() });
+  if (!updated) return res.status(404).json({ error: 'Usuário não encontrado' });
 
-    const user = await User.findOneAndUpdate(
-      { 
-        _id: req.params.id,
-        browserToken 
-      },
-      { lastLogin: new Date() },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ error: 'Usuário não encontrado' });
-    }
-
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
+  res.json({ success: true });
 });
 
-// Rotas de Despesas
-app.post('/api/expenses', async (req, res, next) => {
-  try {
-    const { 
-      description, 
-      amount, 
-      type, 
-      dueDate, 
-      paymentType, 
-      responsavel,
-      notes, 
-      userId,
-      browserToken
-    } = req.body;
+app.post('/api/expenses', async (req, res) => {
+  const { description, amount, type, dueDate, paymentType, responsavel, notes, userId, browserToken } = req.body;
+  if (!description || !amount || !type || !dueDate || !paymentType || !responsavel || !userId || !browserToken)
+    return res.status(400).json({ error: 'Campos obrigatórios' });
 
-    if (!description || !amount || !type || !dueDate || !paymentType || !responsavel || !userId || !browserToken) {
-      return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+  const user = await User.findOne({ _id: userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
+
+  const expense = await new Expense({
+    description, amount, type, dueDate, paymentType, responsavel, notes, user: userId
+  }).save();
+
+  await User.findByIdAndUpdate(userId, {
+    $push: {
+      expenses: expense._id,
+      history: { action: `${type === 'despesa' ? 'Despesa' : 'Receita'} adicionada`, details: `${description} - R$ ${amount}` }
     }
+  });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    const expense = new Expense({
-      description,
-      amount,
-      type,
-      dueDate: new Date(dueDate),
-      paymentType,
-      responsavel,
-      notes,
-      user: userId
-    });
-
-    await expense.save();
-
-    // Atualiza usuário
-    await User.findByIdAndUpdate(userId, { $push: { expenses: expense._id } });
-
-    // Adiciona ao histórico
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        history: {
-          action: `${type === 'despesa' ? 'Despesa' : 'Receita'} adicionada`,
-          details: `${description} - R$ ${amount.toFixed(2)} (${responsavel})`
-        }
-      }
-    });
-
-    res.status(201).json({ message: 'Despesa adicionada!', expense });
-  } catch (err) {
-    next(err);
-  }
+  res.status(201).json({ message: 'Despesa adicionada!', expense });
 });
 
-app.get('/api/expenses/:userId', async (req, res, next) => {
-  try {
-    const { browserToken } = req.query;
-    
-    if (!browserToken) {
-      return res.status(400).json({ error: 'Token do navegador é obrigatório' });
-    }
+app.get('/api/expenses/:userId', async (req, res) => {
+  const { browserToken } = req.query;
+  const user = await User.findOne({ _id: req.params.userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: req.params.userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    // Busca despesas do usuário
-    const expenses = await Expense.find({ user: req.params.userId })
-      .sort({ dueDate: 1 });
-
-    res.json(expenses);
-  } catch (err) {
-    next(err);
-  }
+  const expenses = await Expense.find({ user: req.params.userId }).sort({ dueDate: 1 });
+  res.json(expenses);
 });
 
-app.delete('/api/expenses/:id', async (req, res, next) => {
-  try {
-    const { userId, browserToken } = req.body;
-    
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
+app.delete('/api/expenses/:id', async (req, res) => {
+  const { userId, browserToken } = req.body;
+  const user = await User.findOne({ _id: userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
+  const expense = await Expense.findOne({ _id: req.params.id, user: userId });
+  if (!expense) return res.status(404).json({ error: 'Despesa não encontrada' });
 
-    // Verificar se a despesa pertence ao usuário
-    const expense = await Expense.findOne({ _id: req.params.id, user: userId });
-    if (!expense) {
-      return res.status(404).json({ error: 'Despesa não encontrada ou não pertence ao usuário' });
-    }
+  await Expense.findByIdAndDelete(req.params.id);
+  await User.findByIdAndUpdate(userId, {
+    $pull: { expenses: req.params.id },
+    $push: { history: { action: `${expense.type === 'despesa' ? 'Despesa' : 'Receita'} removida`, details: `${expense.description} - R$ ${expense.amount}` } }
+  });
 
-    // Remove a despesa
-    await Expense.findByIdAndDelete(req.params.id);
-
-    // Remove da lista de despesas do usuário
-    await User.findByIdAndUpdate(userId, { $pull: { expenses: req.params.id } });
-
-    // Adiciona ao histórico
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        history: {
-          action: `${expense.type === 'despesa' ? 'Despesa' : 'Receita'} removida`,
-          details: `${expense.description} - R$ ${expense.amount.toFixed(2)}`
-        }
-      }
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
+  res.json({ success: true });
 });
 
-// Rotas de Datas Importantes
-app.post('/api/dates', async (req, res, next) => {
-  try {
-    const { title, date, notes, userId, browserToken } = req.body;
-    
-    if (!title || !date || !userId || !browserToken) {
-      return res.status(400).json({ error: 'Título, data, ID do usuário e token do navegador são obrigatórios' });
+// Datas importantes
+app.post('/api/dates', async (req, res) => {
+  const { title, date, notes, userId, browserToken } = req.body;
+  const user = await User.findOne({ _id: userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
+
+  const newDate = { title, date, notes, createdAt: new Date() };
+  await User.findByIdAndUpdate(userId, {
+    $push: {
+      importantDates: newDate,
+      history: { action: 'Data importante adicionada', details: `${title} - ${new Date(date).toLocaleDateString()}` }
     }
+  });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    const newDate = {
-      title,
-      date: new Date(date),
-      notes,
-      createdAt: new Date()
-    };
-
-    await User.findByIdAndUpdate(userId, { $push: { importantDates: newDate } });
-
-    // Adiciona ao histórico
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        history: {
-          action: 'Data importante adicionada',
-          details: `${title} - ${new Date(date).toLocaleDateString()}`
-        }
-      }
-    });
-
-    res.status(201).json({ message: 'Data importante adicionada!', date: newDate });
-  } catch (err) {
-    next(err);
-  }
+  res.status(201).json({ message: 'Data adicionada', date: newDate });
 });
 
-app.get('/api/dates', async (req, res, next) => {
-  try {
-    const { userId, browserToken } = req.query;
-    
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
+app.get('/api/dates', async (req, res) => {
+  const { userId, browserToken } = req.query;
+  const user = await User.findOne({ _id: userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    res.json(user.importantDates);
-  } catch (err) {
-    next(err);
-  }
+  res.json(user.importantDates);
 });
 
-app.delete('/api/dates/:id', async (req, res, next) => {
-  try {
-    const { userId, browserToken } = req.body;
-    
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
+app.delete('/api/dates/:id', async (req, res) => {
+  const { userId, browserToken } = req.body;
+  const user = await User.findOne({ _id: userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
+  const dateToRemove = user.importantDates.find(d => d._id.toString() === req.params.id);
+  if (!dateToRemove) return res.status(404).json({ error: 'Data não encontrada' });
 
-    // Encontra a data para registrar no histórico
-    const dateToRemove = user.importantDates.find(d => d._id.toString() === req.params.id);
-    if (!dateToRemove) {
-      return res.status(404).json({ error: 'Data não encontrada' });
-    }
+  await User.findByIdAndUpdate(userId, {
+    $pull: { importantDates: { _id: req.params.id } },
+    $push: { history: { action: 'Data importante removida', details: `${dateToRemove.title} - ${new Date(dateToRemove.date).toLocaleDateString()}` } }
+  });
 
-    // Remove a data
-    await User.findByIdAndUpdate(userId, { 
-      $pull: { importantDates: { _id: req.params.id } } 
-    });
-
-    // Adiciona ao histórico
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        history: {
-          action: 'Data importante removida',
-          details: `${dateToRemove.title} - ${new Date(dateToRemove.date).toLocaleDateString()}`
-        }
-      }
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
+  res.json({ success: true });
 });
 
-// Rotas de Histórico
-app.post('/api/history', async (req, res, next) => {
-  try {
-    const { action, details, userId, browserToken } = req.body;
-    
-    if (!action || !userId || !browserToken) {
-      return res.status(400).json({ error: 'Ação, ID do usuário e token do navegador são obrigatórios' });
-    }
+// Histórico
+app.post('/api/history', async (req, res) => {
+  const { action, details, userId, browserToken } = req.body;
+  const user = await User.findOne({ _id: userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
+  const entry = { action, details, timestamp: new Date() };
+  await User.findByIdAndUpdate(userId, { $push: { history: entry } });
 
-    const entry = {
-      action,
-      details,
-      timestamp: new Date()
-    };
-
-    await User.findByIdAndUpdate(userId, { $push: { history: entry } });
-
-    res.status(201).json({ message: 'Entrada de histórico adicionada!', entry });
-  } catch (err) {
-    next(err);
-  }
+  res.status(201).json({ message: 'Histórico adicionado', entry });
 });
 
-app.get('/api/history', async (req, res, next) => {
-  try {
-    const { userId, browserToken } = req.query;
-    
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
+app.get('/api/history', async (req, res) => {
+  const { userId, browserToken } = req.query;
+  const user = await User.findOne({ _id: userId, browserToken });
+  if (!user) return res.status(403).json({ error: 'Não autorizado' });
 
-    // Verificar se o usuário existe e o token é válido
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Usuário não autorizado' });
-    }
-
-    res.json(user.history);
-  } catch (err) {
-    next(err);
-  }
+  res.json(user.history);
 });
 
-// Rota de Sincronização de Dados Offline
-app.post('/api/sync-data', async (req, res, next) => {
-  try {
-    const { 
-      userId,
-      browserToken,
-      expenses = [],
-      importantDates = [],
-      history = []
-    } = req.body;
-
-    if (!userId || !browserToken) {
-      return res.status(400).json({ error: 'ID do usuário e token do navegador são obrigatórios' });
-    }
-
-    // Verificar autenticação
-    const user = await User.findOne({ _id: userId, browserToken });
-    if (!user) {
-      return res.status(403).json({ error: 'Não autorizado' });
-    }
-
-    // Sincronizar cada tipo de dado
-    const results = {
-      expenses: [],
-      dates: [],
-      history: []
-    };
-
-    // Sincronizar despesas
-    for (const exp of expenses) {
-      try {
-        const existing = await Expense.findById(exp._id);
-        if (!existing) {
-          const newExp = await Expense.create({
-            description: exp.description,
-            amount: exp.amount,
-            type: exp.type,
-            dueDate: new Date(exp.dueDate),
-            paymentType: exp.paymentType,
-            responsavel: exp.responsavel,
-            notes: exp.notes,
-            user: userId,
-            createdAt: exp.createdAt ? new Date(exp.createdAt) : new Date()
-          });
-          results.expenses.push(newExp);
-        }
-      } catch (expError) {
-        console.error('Erro ao sincronizar despesa:', expError);
-      }
-    }
-
-    // Sincronizar datas importantes
-    for (const date of importantDates) {
-      try {
-        const existingDate = user.importantDates.find(d => d._id?.toString() === date._id);
-        if (!existingDate) {
-          const newDate = {
-            title: date.title,
-            date: new Date(date.date),
-            notes: date.notes,
-            createdAt: date.createdAt ? new Date(date.createdAt) : new Date()
-          };
-
-          await User.findByIdAndUpdate(userId, {
-            $push: { importantDates: newDate }
-          });
-          results.dates.push(newDate);
-        }
-      } catch (dateError) {
-        console.error('Erro ao sincronizar data importante:', dateError);
-      }
-    }
-
-    // Sincronizar histórico
-    for (const hist of history) {
-      try {
-        const existingHist = user.history.find(h => h._id?.toString() === hist._id);
-        if (!existingHist) {
-          const newHist = {
-            action: hist.action,
-            details: hist.details,
-            timestamp: hist.timestamp ? new Date(hist.timestamp) : new Date()
-          };
-
-          await User.findByIdAndUpdate(userId, {
-            $push: { history: newHist }
-          });
-          results.history.push(newHist);
-        }
-      } catch (histError) {
-        console.error('Erro ao sincronizar histórico:', histError);
-      }
-    }
-
-    res.json({ success: true, results });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Rota raiz
+// Rota raiz e fallback
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-// Tratamento de rotas não encontradas
 app.use((req, res) => {
   res.status(404).json({ error: 'Rota não encontrada' });
 });
 
-// Inicia servidor
+// Iniciar servidor
 const server = app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
-// Encerramento adequado do servidor
-process.on('SIGTERM', () => {
-  server.close(() => {
-    console.log('Servidor encerrado');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  server.close(() => {
-    console.log('Servidor encerrado');
-    process.exit(0);
-  });
-});
-
-// Keep Alive para Render.com
-const https = require('https');
-const URL_TO_f = 'https://controlededespesas.onrender.com';
-
+// Ping preventivo
+const URL_TO_PING = "https://controlededespesas.onrender.com";
 function pingSite() {
   https.get(URL_TO_PING, (res) => {
-    console.log(`[PING] ${new Date().toISOString()} - Status: ${res.statusCode}`);
-  }).on('error', (e) => {
-    console.error(`[PING ERROR] ${e.message}`);
+    console.log("Ping enviado:", res.statusCode);
+  }).on("error", (e) => {
+    console.error("Erro no ping:", e);
   });
 }
+setInterval(pingSite, 14 * 60 * 1000);
 
-// Ping a cada 5 minutos para manter o servidor ativo
-setInterval(pingSite, 40 * 1000);
-pingSite(); // Primeiro ping
+// Graceful shutdown
+process.on('SIGTERM', () => server.close(() => process.exit(0)));
+process.on('SIGINT', () => server.close(() => process.exit(0)));
