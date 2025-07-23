@@ -727,7 +727,23 @@
     // --- Funções para gerenciar contas ---
     async function createUserAccount(username, photoFile) {
       try {
-        // Verificar se usuário já existe
+        // Verificar se usuário já existe no servidor se estiver online
+        if (isOnline) {
+          try {
+            const response = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(username)}`);
+            if (response.ok) {
+              throw new Error('Nome de usuário já existe');
+            }
+          } catch (error) {
+            if (error.message !== 'Nome de usuário já existe') {
+              console.error('Erro ao verificar usuário no servidor:', error);
+            } else {
+              throw error;
+            }
+          }
+        }
+        
+        // Verificar se usuário já existe localmente
         const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
         const userExists = localData.users.some(u => u.username === username);
         
