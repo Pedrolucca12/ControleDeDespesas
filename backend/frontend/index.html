@@ -1177,88 +1177,74 @@
         // Inicializa localStorage
         initLocalStorage();
         
-        // Tenta buscar o usuário existente
-        const user = await getUserAccount(username);
-        currentUser = user.username;
-        currentUserId = user._id;
-        currentUserPhoto = user.photoPath;
+        // Verifica se usuário já existe localmente
+        const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+        const userExistsLocally = localData.users.some(u => u.username === username);
+        
+        // Se estiver online, verifica no servidor
+        if (isOnline) {
+          try {
+            const response = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(username)}`);
+            if (response.ok) {
+              throw new Error('Nome de usuário já está em uso!');
+            }
+          } catch (error) {
+            if (error.message.includes('já está em uso')) {
+              showNotification(error.message, 'danger');
+              return;
+            }
+          }
+        } else if (userExistsLocally) {
+          showNotification('Nome de usuário já está em uso!', 'danger');
+          return;
+        }
+        
+        // Se chegou aqui, pode criar o usuário
+        const newUser = await createUserAccount(username, currentUserPhoto);
+        currentUser = newUser.username;
+        currentUserId = newUser._id;
+        currentUserPhoto = newUser.photoPath;
         
         // Salva o usuário atual
         saveCurrentUser();
-        
-        // Atualiza o último login no localStorage
-        const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
-        const userIndex = localData.users.findIndex(u => u._id === user._id);
-        if (userIndex !== -1) {
-          localData.users[userIndex].lastLogin = new Date().toISOString();
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
-        }
-        
-        // Atualiza no servidor se estiver online
-        if (isOnline) {
-          try {
-            await fetch(`${API_BASE_URL}/users/${user._id}/last-login`, {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                browserToken: localStorage.getItem(AUTH_TOKEN_KEY)
-              })
-            });
-          } catch (serverError) {
-            console.error('Erro ao atualizar último login no servidor:', serverError);
-          }
-        }
-      } catch (error) {
-        // Se o usuário não existe ou não está autorizado, cria uma nova conta
-        try {
-          const newUser = await createUserAccount(username, currentUserPhoto);
-          currentUser = newUser.username;
-          currentUserId = newUser._id;
-          currentUserPhoto = newUser.photoPath;
-          
-          // Salva o usuário atual
-          saveCurrentUser();
-        } catch (createError) {
-          showNotification('Erro ao criar conta: ' + createError.message, 'danger');
-          return;
-        }
-      }
 
-      // Transição de tela
-      loginScreen.style.opacity = '0';
-      loginScreen.style.transform = 'translateY(-20px)';
-      
-      setTimeout(() => {
-        loginScreen.style.display = 'none';
-        app.style.display = 'block';
-        app.style.opacity = '0';
-        app.style.transform = 'translateY(20px)';
+        // Transição de tela
+        loginScreen.style.opacity = '0';
+        loginScreen.style.transform = 'translateY(-20px)';
         
         setTimeout(() => {
-          app.style.opacity = '1';
-          app.style.transform = 'translateY(0)';
-        }, 50);
-      }, 300);
+          loginScreen.style.display = 'none';
+          app.style.display = 'block';
+          app.style.opacity = '0';
+          app.style.transform = 'translateY(20px)';
+          
+          setTimeout(() => {
+            app.style.opacity = '1';
+            app.style.transform = 'translateY(0)';
+          }, 50);
+        }, 300);
 
-      loadExpenses();
-      loadImportantDates();
-      loadHistory();
-      
-      // Inicia verificação de vencimentos
-      startExpiryCheck();
-      
-      // Verifica vencimentos imediatamente ao logar
-      checkExpiringExpenses();
-      
-      // Sincroniza dados locais com o servidor
-      if (isOnline) {
-        syncLocalDataWithServer();
+        loadExpenses();
+        loadImportantDates();
+        loadHistory();
+        
+        // Inicia verificação de vencimentos
+        startExpiryCheck();
+        
+        // Verifica vencimentos imediatamente ao logar
+        checkExpiringExpenses();
+        
+        // Sincroniza dados locais com o servidor
+        if (isOnline) {
+          syncLocalDataWithServer();
+        }
+
+        // Carrega configurações
+        loadSettings();
+      } catch (error) {
+        showNotification('Erro ao criar conta: ' + error.message, 'danger');
+        return;
       }
-
-      // Carrega configurações
-      loadSettings();
     });
 
     // --- Notificações ---
@@ -1396,13 +1382,12 @@
             const browserToken = localStorage.getItem(AUTH_TOKEN_KEY);
             const response = await fetch(`${API_BASE_URL}/expenses/${currentUserId}?browserToken=${browserToken}`);
             if (response.ok) {
-              const serverExpenses = await response.json();
-              expenses = serverExpenses;
+              expenses = await response.json();
               
               // Atualiza localStorage com dados do servidor
               const localData = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
               localData.expenses = localData.expenses.filter(exp => exp.userId !== currentUserId);
-              localData.expenses.push(...serverExpenses.map(e => ({ ...e, synced: true })));
+              localData.expenses.push(...expenses.map(e => ({ ...e, synced: true })));
               localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localData));
             } else {
               throw new Error('Erro ao buscar despesas do servidor');
@@ -2239,27 +2224,42 @@
     }
 
     // --- Configurações ---
-    settingsBtn.addEventListener('click', () => {
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Impede que o evento se propague
       settingsMenu.classList.toggle('show');
     });
 
     // Fechar menu ao clicar fora
     document.addEventListener('click', (e) => {
-      if (!settingsMenu.contains(e.target) )
+      if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
         settingsMenu.classList.remove('show');
       }
-    );
+    });
 
     weeklyCheckbox.addEventListener('change', (e) => {
       updateSettings('weeklyReport', e.target.checked);
-      weeklyReport.style.display = e.target.checked ? 'block' : 'none';
-      if (e.target.checked) loadWeeklyReport();
+      if (e.target.checked) {
+        loadWeeklyReport();
+      } else {
+        if (weeklyChart) {
+          weeklyChart.destroy();
+          weeklyChart = null;
+        }
+        weeklyReport.style.display = 'none';
+      }
     });
 
     monthlyCheckbox.addEventListener('change', (e) => {
       updateSettings('monthlyReport', e.target.checked);
-      monthlyReport.style.display = e.target.checked ? 'block' : 'none';
-      if (e.target.checked) loadMonthlyReport();
+      if (e.target.checked) {
+        loadMonthlyReport();
+      } else {
+        if (monthlyChart) {
+          monthlyChart.destroy();
+          monthlyChart = null;
+        }
+        monthlyReport.style.display = 'none';
+      }
     });
 
     themeCheckbox.addEventListener('change', (e) => {

@@ -86,13 +86,22 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 app.post('/api/users', upload.single('photo'), async (req, res) => {
   try {
     const { username, browserToken } = req.body;
-    if (!username || !browserToken || !req.file) return res.status(400).json({ error: 'Campos obrigatórios' });
+    
+    if (!username || !browserToken || !req.file) {
+      return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+    }
 
-    const userExists = await User.findOne({ username });
-    if (userExists) return res.status(400).json({ error: 'Usuário já existe' });
+    // Verifica se usuário já existe
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Nome de usuário já está em uso!' });
+    }
 
-    const tokenExists = await User.findOne({ browserToken });
-    if (tokenExists) return res.status(400).json({ error: 'Dispositivo já possui uma conta' });
+    // Verifica se o token já está em uso
+    const tokenUser = await User.findOne({ browserToken });
+    if (tokenUser) {
+      return res.status(400).json({ error: 'Este dispositivo já possui uma conta!' });
+    }
 
     const user = await new User({
       username,
@@ -107,12 +116,27 @@ app.post('/api/users', upload.single('photo'), async (req, res) => {
 
     const userData = user.toObject();
     delete userData.browserToken;
-    res.status(201).json({ message: 'Usuário criado!', user: userData });
+    res.status(201).json({ 
+      message: 'Usuário criado com sucesso!', 
+      user: userData 
+    });
+
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(400).json({ error: 'Nome de usuário já existe' });
+      return res.status(400).json({ error: 'Nome de usuário já está em uso!' });
     }
+    console.error('Erro ao criar usuário:', err);
     res.status(500).json({ error: 'Erro interno ao criar usuário' });
+  }
+});
+
+// Rota para verificar disponibilidade de nome de usuário
+app.get('/api/users/check/:username', async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    res.json({ available: !user });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao verificar usuário' });
   }
 });
 
