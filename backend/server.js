@@ -1,4 +1,3 @@
-// server.js COMPLETO e corrigido
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -89,11 +88,9 @@ app.post('/api/users', upload.single('photo'), async (req, res) => {
     const { username, browserToken } = req.body;
     if (!username || !browserToken || !req.file) return res.status(400).json({ error: 'Campos obrigatórios' });
 
-    // Verifica se usuário já existe
     const userExists = await User.findOne({ username });
     if (userExists) return res.status(400).json({ error: 'Usuário já existe' });
 
-    // Verifica se token já está em uso
     const tokenExists = await User.findOne({ browserToken });
     if (tokenExists) return res.status(400).json({ error: 'Dispositivo já possui uma conta' });
 
@@ -149,7 +146,6 @@ app.patch('/api/users/:id/settings', async (req, res) => {
   res.json({ success: true, settings: updated.settings });
 });
 
-// Rotas de despesas - permitem descrições duplicadas
 app.post('/api/expenses', async (req, res) => {
   const { description, amount, type, dueDate, paymentType, responsavel, notes, userId, browserToken } = req.body;
   if (!description || !amount || !type || !dueDate || !paymentType || !responsavel || !userId || !browserToken)
@@ -202,7 +198,6 @@ app.delete('/api/expenses/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-// Rotas para relatórios
 app.get('/api/reports/weekly/:userId', async (req, res) => {
   const { browserToken } = req.query;
   const user = await User.findOne({ _id: req.params.userId, browserToken });
@@ -217,7 +212,6 @@ app.get('/api/reports/weekly/:userId', async (req, res) => {
     dueDate: { $gte: firstDayOfWeek, $lte: lastDayOfWeek }
   }).sort({ dueDate: 1 });
 
-  // Agrupa por tipo e dia para o gráfico
   const groupedData = {};
   expenses.forEach(exp => {
     const day = new Date(exp.dueDate).toLocaleDateString('pt-BR', { weekday: 'short' });
@@ -249,7 +243,6 @@ app.get('/api/reports/monthly/:userId', async (req, res) => {
     dueDate: { $gte: firstDayOfMonth, $lte: lastDayOfMonth }
   }).sort({ dueDate: 1 });
 
-  // Agrupa por tipo de pagamento para o gráfico
   const paymentTypes = ['dinheiro', 'cartão', 'boleto', 'transferência', 'outro'];
   const groupedData = {};
   
@@ -268,7 +261,6 @@ app.get('/api/reports/monthly/:userId', async (req, res) => {
   });
 });
 
-// Datas importantes
 app.post('/api/dates', async (req, res) => {
   const { title, date, notes, userId, browserToken } = req.body;
   const user = await User.findOne({ _id: userId, browserToken });
@@ -301,17 +293,19 @@ app.delete('/api/dates/:id', async (req, res) => {
   const dateToRemove = user.importantDates.find(d => d._id.toString() === req.params.id);
   if (!dateToRemove) return res.status(404).json({ error: 'Data não encontrada' });
 
-await User.findByIdAndUpdate(userId, {
-  $pull: { importantDates: { _id: req.params.id } },
-  $push: {
-    history: {
-      action: 'Data importante removida',
-      details: `${dateToRemove.title} - ${new Date(dateToRemove.date).toLocaleDateString()}`
+  await User.findByIdAndUpdate(userId, {
+    $pull: { importantDates: { _id: req.params.id } },
+    $push: {
+      history: {
+        action: 'Data importante removida',
+        details: `${dateToRemove.title} - ${new Date(dateToRemove.date).toLocaleDateString()}`
+      }
     }
-  }
+  });
+
+  res.json({ success: true });
 });
 
-// Histórico
 app.post('/api/history', async (req, res) => {
   const { action, details, userId, browserToken } = req.body;
   const user = await User.findOne({ _id: userId, browserToken });
@@ -331,7 +325,6 @@ app.get('/api/history', async (req, res) => {
   res.json(user.history);
 });
 
-// Rota raiz e fallback
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
@@ -340,12 +333,10 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Rota não encontrada' });
 });
 
-// Iniciar servidor
 const server = app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
-// Ping preventivo
 const URL_TO_PING = "https://controlededespesas.onrender.com";
 function pingSite() {
   https.get(URL_TO_PING, (res) => {
@@ -356,6 +347,5 @@ function pingSite() {
 }
 setInterval(pingSite, 40 * 1000);
 
-// Graceful shutdown
 process.on('SIGTERM', () => server.close(() => process.exit(0)));
-process.on('SIGINT', () => server.close(() => process.exit(0)));})   
+process.on('SIGINT', () => server.close(() => process.exit(0)));
